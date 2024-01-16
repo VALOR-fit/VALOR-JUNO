@@ -1,0 +1,3 @@
+#!/bin/sh
+
+root -l ${VALOR_EXPT}/root/valor_expt.C $*
