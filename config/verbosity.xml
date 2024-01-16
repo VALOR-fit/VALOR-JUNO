@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<messenger_config>
+
+  <!-- 
+    Defines the priority levels for VALOR message streams.
+    The priority (in descending importance order) can be 
+    FATAL, ALERT, CRIT, ERROR, WARN, NOTICE, INFO, DEBUG.
+   -->
+
+  <priority msgstream="Messenger">    NOTICE   </priority>
+  <priority msgstream="Rnd">          NOTICE   </priority>
+  <priority msgstream="Reg">          NOTICE   </priority>
+  <priority msgstream="XML">          NOTICE   </priority>
+  <priority msgstream="SDData">       NOTICE   </priority>
+  <priority msgstream="SDModel">      NOTICE   </priority>
+  <priority msgstream="ArrIdx">       FATAL    </priority>
+  <priority msgstream="NDBinning">    NOTICE   </priority>
+  <priority msgstream="NuFlux">       NOTICE   </priority>
+  <priority msgstream="NuDet">        NOTICE   </priority>
+  <priority msgstream="NuInt">        NOTICE   </priority>
+  <priority msgstream="InputMC">      NOTICE   </priority>
+  <priority msgstream="HACK">         FATAL    </priority>
+  
+  <priority msgstream="Minuit">                         NOTICE </priority>
+  <priority msgstream="Minuit2">                          INFO </priority>
+  <priority msgstream="CompoundFitElements">            NOTICE </priority>
+  <priority msgstream="CompoundFitModel">               NOTICE </priority>
+  <priority msgstream="CompoundFitData">                NOTICE </priority>
+  <priority msgstream="CorrelatedSystematics">          NOTICE </priority>
+  <priority msgstream="CompoundCorrelatedSystematics">  NOTICE </priority>
+  <priority msgstream="GenericSingleSampleFitModel">    NOTICE </priority>
+  <priority msgstream="GenericSingleSampleFitData">     NOTICE </priority>
+  <priority msgstream="FitInputs">                      NOTICE </priority>
+  <priority msgstream="UtlNumStat">                     NOTICE </priority>
+  <priority msgstream="Lateral">                        NOTICE </priority>
+
+  <priority msgstream="fitnt_conv">                     NOTICE </priority>
+  <priority msgstream="valor_sbn">                      NOTICE </priority>
+  
+  <priority msgstream="make_minidst">                   NOTICE </priority>
+  <priority msgstream="make_fd_minidst">                NOTICE </priority>
+  <priority msgstream="make_fastmc_minidst">            NOTICE </priority>
+  <priority msgstream="make_response_func">             NOTICE </priority>
+  <priority msgstream="RFL">                            NOTICE </priority>
+  <priority msgstream="KBCubHcmbMondrian">              ERROR  </priority>
+  <priority msgstream="Binning">                        ERROR  </priority>
+  <priority msgstream="SingleSampleKineBinning">        ERROR  </priority>
+  <priority msgstream="SampleBinning">                  ERROR  </priority>
+
+  <priority msgstream="universe_variation_tweaks">      NOTICE </priority>
+  <priority msgstream="make_sbncode_minidst">           NOTICE </priority>
+  <priority msgstream="Marginalisation">                NOTICE </priority>
+  <priority msgstream="UtlOscillation">                 NOTICE </priority>
+  <priority msgstream="Interpolator">                   WARN   </priority>
+  <priority msgstream="ToyStream">                      NOTICE </priority>
+  <priority msgstream="ToyBuilder">                     NOTICE </priority>
+
+
+</messenger_config>
