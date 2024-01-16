@@ -1,0 +1,75 @@
+#
+# Make.template 
+#
+# Author: Costas Andreopoulos <constantinos.andreopoulos \at cern.ch>
+#
+
+#
+#
+PACKAGE_LIBDIR                = $(VALOR_EXPT_TOPDIR)/lib/
+PACKAGE_LIB                   = $(VALOR_EXPT_TOPDIR)/lib/$(LIBNAME)-$(VALOR_APP_VERSION)-$(VALOR_FMWK_VERSION).$(DllSuf)
+PACKAGE_LIBNOVRS              = $(VALOR_EXPT_TOPDIR)/lib/$(LIBNAME).$(DllSuf)
+PACKAGE_LIBMACLINK            = $(VALOR_EXPT_TOPDIR)/lib/$(LIBNAME).$(DllLinkSuf)
+
+PACKAGE_ALL_SOURCES          := $(wildcard *.cxx)
+DICTGEN_HEADERS              := $(addsuffix .h, $(basename $(PACKAGE_ALL_SOURCES)))
+DICTGEN_OBJECTS              := $(addsuffix .$(ObjSuf), $(basename $(DICTGEN_HEADERS)))
+PACKAGE_ALL_SOURCES          := $(PACKAGE_ALL_SOURCES) $(DICTIONARY).cc $(wildcard *.cpp)
+PACKAGE_ALL_OBJECTS           = $(addsuffix .$(ObjSuf), $(basename $(PACKAGE_ALL_SOURCES)))
+PACKAGE_SOURCES              := $(wildcard *.cxx)
+PACKAGE_OBJECTS               = $(addsuffix .$(ObjSuf), $(basename $(PACKAGE_SOURCES)))
+
+LIB_DEPEND=
+ifeq ($(strip $(DICTIONARY)),undefined)
+  LIB_DEPEND = $(PACKAGE_OBJECTS) 
+else
+  LIB_DEPEND = $(PACKAGE_ALL_OBJECTS)
+endif
+
+#
+#
+rootcint: $(DICTIONARY).o
+
+$(DICTIONARY).cc: LinkDef.h $(DICTGEN_OBJECTS)
+	$(RM) $(DICTIONARY).*
+	@echo "[package: $(PACKAGE)] Generating ROOT dictionary ..."
+ifeq ($(ROOT_MAJOR),5)
+	rootcint -f $(DICTIONARY).cc $(ROOT_CINT_FLAGS) $(ROOT_INCLUDES) $(VALOR_INCLUDES) $(DICTGEN_HEADERS) LinkDef.h
+else
+	rootcling -f $(DICTIONARY).cc $(ROOT_CINT_FLAGS) $(ROOT_INCLUDES) $(VALOR_INCLUDES) $(DICTGEN_HEADERS) LinkDef.h
+endif
+
+#
+#
+lib: $(LIB_DEPEND)
+	@echo "[package: $(PACKAGE)] Generating shared library ..."
+ifeq ($(strip $(DICTIONARY)),undefined)
+	$(SOCMD) $(SOFLAGS) $(SOMINF) $(PACKAGE_OBJECTS) $(OutPutOpt) $(PACKAGE_LIB)
+else
+	$(SOCMD) $(SOFLAGS) $(SOMINF) $(PACKAGE_ALL_OBJECTS) $(OutPutOpt) $(PACKAGE_LIB)
+endif
+
+#
+#
+lib-link: FORCE
+	@echo "[package: $(PACKAGE)] Creating symbolic link to shared library ..."
+	$(SYMLINK) $(PACKAGE_LIB) $(PACKAGE_LIBNOVRS)
+ifeq ($(strip $(IS_MACOSX)),YES)
+	$(SYMLINK) $(PACKAGE_LIB) $(PACKAGE_LIBMACLINK)
+endif
+
+#
+#
+purge: FORCE
+	$(RM) $(PACKAGE_OBJECTS) *~ core a.out Makefile.temp
+ 
+
+#
+#
+clean: FORCE
+ifeq ($(strip $(DICTIONARY)),undefined)
+	$(RM) *.o *_rdict.pcm *~ core a.out $(PACKAGE_LIB) $(PACKAGE_LIBMACLINK) $(PACKAGE_LIBNOVRS) Makefile.temp
+else
+	$(RM) *.o *_rdict.pcm *~ core a.out $(PACKAGE_LIB) $(PACKAGE_LIBMACLINK) $(PACKAGE_LIBNOVRS) $(DICTIONARY)* $(PACKAGE_LIBDIR)/$(DICTIONARY)* Makefile.temp
+endif
+

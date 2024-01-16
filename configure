@@ -1,0 +1,354 @@
+#! /usr/bin/perl -w
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# VALOR/EXPT configuration script
+#
+# For help, type ./configure --help
+#
+# Costas Andreopoulos <constantinos.andreopoulos \at cern.ch>
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+use File::Path;
+
+# print out info & exit if any of the command-line arguments was --help
+#
+if(($match = grep(/--help/i, @ARGV)) > 0) { 
+  print "\n";
+  print "*** VALOR/EXPT configure script *** \n\n";
+  print "Usage: ./configure [option]... [flag=value]... \n\n";
+  print "    FLAG              DESCRIPTION                                                 DEFAULT\n\n";
+  print "    --prefix          installation location (for 'make install')                  /usr/local/\n";
+  print "\n enable/disable options with either --enable- or --disable- (eg --enable-lhapdf --disable-flux-drivers)\n\n";
+  print "    debug               Adds -g in the compiler options to request debug info         default: disabled \n";
+  print "    low-level-messages  Turns on error logging in speed-critical areas.               default: disabled \n";
+  print "    sbnana              Turns on SBNanalysis integration                              default: if_exists \n";
+  print "\n options for 3rd party software, prefix with --with- (eg --with-lhapdf-lib=/some/path/)\n\n";
+  print "    compiler          Compiler to use (any of clang,g++)                          default: use what the framework uses \n";
+  print "    optimiz-level     Compiler optimization (any of O,O2,O3,OO,Os)                default: O2 \n";
+  print "If the printout was too long then pipe it through a pager, eg: \n";
+  print "./configure --help | more \n";
+  exit 0;
+}
+
+# Check that $VALOR_EXPT is set
+#
+$VALOR_EXPT = $ENV{'VALOR_EXPT'};
+die ("*** Error *** The VALOR_EXPT environmental variable is not defined") 
+unless defined $VALOR_EXPT;
+
+# Check that $ROOTSYS is set
+#
+$ROOTSYS = $ENV{'ROOTSYS'};
+die ("*** Error *** The ROOTSYS environmental variable is not defined. Is ROOT installed?") 
+unless defined $ROOTSYS;
+
+# Enable auto-detection?
+#
+system("find $VALOR_EXPT/configure");
+print "\n";
+$auto_detect = ($?==0) ? 1 : 0;
+if(! $auto_detect) {
+  print "\n*** Warning *** Path auto-detection is turned off. You need the 'find' utility to use that feature\n\n";
+}
+
+print "\nYour input configuration options were: @ARGV";
+if($#ARGV < 0) { print "(none)" };
+print "\n\n";
+
+# Print VALOR/EXPT banner 
+#
+$BANNER_FILE = "$VALOR_EXPT/data/banner/banner.dat";
+if(-e $BANNER_FILE) {
+  open(BANNER, "<$BANNER_FILE");
+  @hdr=<BANNER>;
+  print @hdr;
+  close(BANNER);
+  print "\n";
+}
+
+# Read VALOR_EXPT version number
+#
+$VRS_FILENAME = "$VALOR_EXPT/VERSION";
+open(VRS_FILE, "<$VRS_FILENAME") or die("Can not read the VALOR_EXPT version information!");
+@vrs_file=<VRS_FILE>;
+close(VRS_FILE);
+chomp($release = $vrs_file[0]);
+# ($major, $minor, $rev) = split('.', $release);
+# note: split() doesn't split on dots...
+$release=~m/(\d+).(\d+).(\d+)/;
+$major = $1;
+$minor = $2;
+$revis = $3;
+print "Configuring VALOR/EXPT source tree version: $major.$minor.$revis\n";
+
+# Read VALOR_EXPT requirements
+#
+$REQ_FILENAME = "$VALOR_EXPT/REQUIREMENTS";
+open(REQ_FILE, "<$REQ_FILENAME") or die("Can not read the VALOR_EXPT requirements file!");
+@requirements=<REQ_FILE>;
+close(REQ_FILE);
+
+# 
+# Process inputs
+# 
+
+# Create a string by joining all the command line arguments
+#
+my $options = join(" ", @ARGV);
+
+# Get & save installation location (--prefix) or set default
+#
+my $opt_prefix="/usr/local/";
+if(($match = grep(/--prefix/i, @ARGV)) > 0) { 
+  $options=~m/--prefix=(\S*)/i;
+  $opt_prefix = $1;
+  if( $VALOR_EXPT eq $opt_prefix ) {
+     print "*** Error *** --prefix can not point to the VALOR_EXPT top level directory!\n\n";
+     exit 1;
+  }
+}
+
+# Default --enable/--disable config options (for a minimal build)
+#
+my $opt_enable_debug              = "NO";
+my $opt_enable_low_level_messages = "NO";
+
+# Check configure's command line arguments for non-default values
+#
+if(($match = grep(/--enable-debug/i, @ARGV)) > 0) { $opt_enable_debug         = "YES"; }
+
+my $opt_with_cxx_debug_flag="";
+if($opt_enable_debug eq "YES") { $opt_with_cxx_debug_flag = "-g"; }
+
+
+if(($match = grep(/--enable-low-level-messages/i, @ARGV)) > 0) { $opt_enable_low_level_messages = "YES"; }
+
+# Check compiler optimization level
+#
+my $opt_with_cxx_optimiz_flag="O2"; # default
+if( $options=~m/--with-optimiz-level=(\S*)/i ) {
+  $opt_with_cxx_optimiz_flag = $1;
+}
+
+# Check compiler
+# 
+my $opt_with_compiler="fmwk"; # default
+if( $options=~m/--with-compiler=(\S*)/i ) {
+  $opt_with_compiler = $1;
+}
+
+# Get VALOR framework path
+#
+if( defined $ENV{'VALOR_FMWK'} ) { 
+  $opt_with_valor_framework = $ENV{'VALOR_FMWK'}; 
+  print "The \$VALOR_FMWK env var is defined. Using framework at ${opt_with_valor_framework} \n";
+}
+if(! -d $opt_with_valor_framework) {
+  print "*** Error *** Could not locate the VALOR framework package. Please define \$VALOR_FMWK \n\n";
+  exit 1;
+} 
+
+if(($match = grep(/--disable-sbnana/i, @ARGV)) == 0) {
+  $JUNOANALYSIS_ENABLED = int(!(`which juno 2>/dev/null` eq ''));
+}
+else {
+  $JUNOANALYSIS_ENABLED = 0;
+}
+
+# Make sure we use the correct version of the framework package
+#
+# Read the version of the framework package
+$FMWK_VRS_FILENAME = "$opt_with_valor_framework/VERSION";
+open(FMWK_VRS_FILE, "<$FMWK_VRS_FILENAME") or die("Can not read the VALOR_FMWK version information!");
+@fmwk_vrs_file=<FMWK_VRS_FILE>;
+close(FMWK_VRS_FILE);
+chomp($fmwk_release = $fmwk_vrs_file[0]);
+# ($major, $minor, $rev) 
+$fmwk_release=~m/(\d+).(\d+).(\d+)/;
+$fmwk_major = $1;
+$fmwk_minor = $2;
+$fmwk_revis = $3;
+print "Using VALOR framework package version: $fmwk_major.$fmwk_minor.$fmwk_revis\n";
+# Check the requirements file to make sure that an appropriate version of the framework is used
+$have_fmwk_requirement = 0;
+foreach(@requirements) {
+ if(m/FMWK/i) {
+    $have_fmwk_requirement = 1;
+    $req_fmwk_release = $_;
+    $req_fmwk_release=~m/\w*\s*(\d+).(\d+).(\d+)/;
+    $req_fmwk_major = $1;
+    $req_fmwk_minor = $2;
+    $req_fmwk_revis = $3;
+ }
+}
+# Enforce
+if($have_fmwk_requirement) {
+  print "Required VALOR framework package version: $req_fmwk_major.$req_fmwk_minor.$req_fmwk_revis\n\n";
+  if( $fmwk_major != $req_fmwk_major ||
+      $fmwk_minor != $req_fmwk_minor ||
+      $fmwk_revis != $req_fmwk_revis ) 
+  {
+     die(" *** There is a mismatch between the input and required VALOR framework package versions *** \n\n\n");
+  }    
+} else {
+  print "No VALOR framework package version requirement\n\n";
+}
+
+# This in SDK now:
+#
+## Work out the GENIE version
+#if ($ENV{GENIE}) {
+#  $GENIE_ENABLED = 1;
+#  if (`genie-config --version` >= 3) {
+#    $GENIE_VERSION = 3;
+#  }
+#  else {
+#    $GENIE_VERSION = 2;
+#  }
+#}
+#else {
+#  $GENIE_ENABLED = 0;
+#}
+#
+
+#
+# Create a Conventions package, if none exists
+#
+$conventions_path="$VALOR_EXPT/src/juno/Conventions/";
+mkpath ($conventions_path, {verbose => 1, mode=>0777}); 
+die("$conventions_path doesn't exist") unless -d $conventions_path;
+# 
+# Read version info and automatically generate a header file with relevant flags that
+# can be used to make code conditional upon specific version numbers
+#
+$VRS_HEADER_FILENAME = "$VALOR_EXPT/src/juno/Conventions/Version.h";
+print "Automatically generating file: $VRS_HEADER_FILENAME \n";
+open(VRS_HEADER_FILE, ">$VRS_HEADER_FILENAME") or die("Can not write out the Version.h file!");
+print VRS_HEADER_FILE "#ifndef _VALOR_EXPT_VERSION_H_ \n";
+print VRS_HEADER_FILE "#define _VALOR_EXPT_VERSION_H_ \n";
+print VRS_HEADER_FILE "/* \n";
+print VRS_HEADER_FILE " * Version information automatically generated by the VALOR/EXPT installer \n";
+print VRS_HEADER_FILE " * \n";
+print VRS_HEADER_FILE " * These macros can be used in the following way (as the ones at ROOT's RVersion.h): \n";
+print VRS_HEADER_FILE " * #if __VALOR_EXPT_RELEASE_CODE__ >= GRELCODE(2,4,11) \n";
+print VRS_HEADER_FILE " * #include <newheader.h>\n";
+print VRS_HEADER_FILE " * #else\n";
+print VRS_HEADER_FILE " * #include <oldheader.h>\n";
+print VRS_HEADER_FILE " * #endif\n";
+print VRS_HEADER_FILE "*/ \n\n";
+print VRS_HEADER_FILE "#define VALOR_EXPT_RELEASE_CODE_BUILDER(a,b,c) (((a) << 16) + ((b) << 8) + (c)) \n\n";
+print VRS_HEADER_FILE "#define __VALOR_EXPT_RELEASE__      \"$release\"\n";
+print VRS_HEADER_FILE "#define __VALOR_EXPT_RELEASE_CODE__ VALOR_EXPT_RELEASE_CODE_BUILDER($major,$minor,$revis) \n\n";
+print VRS_HEADER_FILE "#endif\n\n";
+close(VRS_HEADER_FILE);
+
+# 
+# Automatically generate a header file with relevant build information that
+# can be used to make code conditional upon it
+#
+$BLD_HEADER_FILENAME = "$VALOR_EXPT/src/juno/Conventions/Build.h";
+print "Automatically generating file: $BLD_HEADER_FILENAME \n";
+open(BLD_HEADER_FILE, ">$BLD_HEADER_FILENAME") or die("Can not write out the Build.h file!");
+print BLD_HEADER_FILE "#ifndef _VALOR_EXPT_BUILD_H_ \n";
+print BLD_HEADER_FILE "#define _VALOR_EXPT_BUILD_H_ \n";
+print BLD_HEADER_FILE "/* \n";
+print BLD_HEADER_FILE " * Version information automatically generated by the VALOR/EXPT installer \n";
+print BLD_HEADER_FILE " */ \n\n\n\n";
+
+if ($opt_enable_low_level_messages eq "YES") {
+  print BLD_HEADER_FILE "#define VALOR_EXPT_LOW_LEVEL_MESG_ENABLED\n\n";
+}
+
+# This is in SDK now:
+#
+#print BLD_HEADER_FILE "#define GENIE_ENABLED $GENIE_ENABLED\n";
+#if ($GENIE_ENABLED) {
+#  print BLD_HEADER_FILE "#define GENIE_VERSION $GENIE_VERSION\n\n";
+#}
+#
+
+print BLD_HEADER_FILE "#define JUNOANALYSIS_ENABLED $JUNOANALYSIS_ENABLED\n\n";
+
+print BLD_HEADER_FILE "\n\n#endif //_VALOR_EXPT_BUILD_H_ \n\n";
+close(BLD_HEADER_FILE);
+
+
+
+#
+# Save config options to src/make/Make.config for inclusion in other Makefiles
+#
+# Open Make.config to write configuration options
+#
+$MKCONF_FILENAME = "$VALOR_EXPT/make/Make.config";
+print "Automatically generating file: $MKCONF_FILENAME \n";
+open(MKCONF, ">$MKCONF_FILENAME") or die("Can not write out the Make.config file!");
+print MKCONF "# \n";
+print MKCONF "# Make.config \n";
+print MKCONF "# This file was automatically generated by the VALOR/EXPT installer \n";
+print MKCONF "# for inclusion into the project Makefiles  \n";
+print MKCONF "# \n";
+print MKCONF "OPT_PREFIX=$opt_prefix\n";
+if ($opt_with_compiler ne "fmwk") {
+  print MKCONF "OPT_WITH_COMPILER=$opt_with_compiler\n";
+}
+print MKCONF "OPT_WITH_CXX_DEBUG_FLAG=$opt_with_cxx_debug_flag\n";
+print MKCONF "OPT_WITH_CXX_OPTIMIZ_FLAG=-$opt_with_cxx_optimiz_flag\n";
+print MKCONF "OPT_WITH_VALOR_FRAMEWORK=$opt_with_valor_framework\n";
+print MKCONF "JUNOANALYSIS_ENABLED=$JUNOANALYSIS_ENABLED\n";
+
+close(MKCONF);
+if(-e $MKCONF_FILENAME) {
+  print "\nThe following config options were set in Make.config: \n";
+  open(MKCONFR, "<$MKCONF_FILENAME") or die("Can not read back the $MKCONF_FILENAME");
+  @make_conf=<MKCONFR>;
+  close(MKCONFR);
+# print "@make_conf\n" unless ;
+  foreach $setting (@make_conf) { 
+    chomp($setting); 
+    if ($setting=~m/\=/) {print "  $setting\n";} 
+  }
+  print "\n";
+}
+if(-e $BLD_HEADER_FILENAME) {
+  print "\nThe following config options were set in $BLD_HEADER_FILENAME: \n";
+  open(BUILDHR, "<$BLD_HEADER_FILENAME") or die("Can not read back the $BLD_HEADER_FILENAME");
+  @buildh=<BUILDHR>;
+  close(BUILDHR);
+  $buildh = @buildh; # length
+  foreach $setting (@buildh[5..$buildh-3]) { 
+    chomp($setting); 
+    if ($setting) {print "  $setting\n";} 
+  }
+  print "\n";
+}
+
+print "*** To continue building VALOR/EXPT type: make ";
+# Warning for SRT users  
+if(defined $ENV{'SRT_ENV_SET'}) {
+  print "(Don't forget to 'srt_setup --unsetup' first)";
+}
+print "\n\n";
+
+sub auto_detect {
+
+  @search_dir  = ("/usr","/opt","/lib");           # std search paths
+  push (@search_dir,"$ENV{'HOME'}") 
+                 if defined $ENV{'HOME'};          # add $HOME
+  push (@search_dir,"/hep");                       # add where I add ext apps in my mac book air
+  push (@search_dir,"/opt/ppd/t2k/softw/");        # add where stuff gets installed at RAL Tier2
+  push (@search_dir,"$ENV{'RSD_TOP_DIR'}") 
+                 if defined $ENV{'RSD_TOP_DIR'};   # add where RSD puts ext supporting libs
+
+  $search_file = shift; 
+  $optional_fullpath_substr = shift; # extra help in locating the correct file
+
+  $optional_fullpath_substr = "" unless defined $optional_fullpath_substr;
+
+  foreach(@search_dir) {
+     $curr_dir = $_;
+     if(! -d $curr_dir) {next;}
+     @matches = `find $curr_dir -type f -maxdepth 7 -name $search_file 2> /dev/null | grep \"$optional_fullpath_substr\"`;
+     $nmatches = @matches;
+     if( $nmatches > 0) { return $matches[0]; }
+  }
+  return "";
+}

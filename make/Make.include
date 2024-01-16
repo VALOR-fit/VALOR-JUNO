@@ -1,0 +1,137 @@
+#
+# Costas Andreopoulos (Rutherford Lab.) <constantinos.andreopoulos \at cern.ch>
+#
+
+VALOR_SDK_TOPDIR  = $(VALOR_FMWK)
+VALOR_EXPT_TOPDIR = $(VALOR_EXPT)
+
+# Include framework includes 
+include $(VALOR_FMWK)/make/Make.include
+
+include $(VALOR_EXPT_TOPDIR)/make/Make.config
+
+ifndef OPT_WITH_CXX_USERDEF_FLAGS
+ OPT_WITH_CXX_USERDEF_FLAGS=
+endif
+
+# Check if this is a "clean" command, we can skip some stuff
+ifeq (clean,$(findstring clean,$(MAKECMDGOALS)))
+  is_cln="true"
+else
+  is_cln="false"
+endif
+
+#-------------------------------------------------------------------
+#                      VALOR FRAMEWORK CODE
+#-------------------------------------------------------------------
+
+# VALOR framework release info
+#
+VALOR_FMWK_VERSION  = $(shell awk '{print $0}' $(OPT_WITH_VALOR_FRAMEWORK)/VERSION)
+
+# VALOR framework include path
+#
+VALOR_FMWK_INCLUDES  := -I$(OPT_WITH_VALOR_FRAMEWORK)/src/
+
+# VALOR framework libraries
+#
+ifeq ("false",$(is_cln))
+  VALOR_FMWK_LIBRARIES = $(shell valor_fmwk-config --libs)
+endif
+
+#-------------------------------------------------------------------
+#                        VALOR EXPT CODE
+#-------------------------------------------------------------------
+
+# VALOR expt-specific code release info
+#
+VALOR_EXPT_VERSION  = $(shell awk '{print $0}' $(VALOR_EXPT_TOPDIR)/VERSION)
+
+# VALOR expt-specific include path
+#
+VALOR_EXPT_INCLUDES := -I$(VALOR_EXPT_TOPDIR)/src/
+
+# VALOR expt-specific libraries
+#
+ifeq ("false",$(is_cln))
+  VALOR_EXPT_LIBRARIES = $(shell valor_expt-config --libs)
+endif
+
+
+#-------------------------------------------------------------------
+#                      SBN analysis
+#-------------------------------------------------------------------
+
+#ifeq (1,$(SBNANALYSIS_ENABLED))
+  # This is wrong but it'll work until we have a proper directory to get these from
+#  SBNANALYSIS_INC = -I$(SBN_ANALYSIS_DIR)/../ 
+#  SBNANALYSIS_LIB = -lsbnanalysis_Event -L$(SBN_LIB_DIR)
+
+#  LARSOFT_INCLUDES += -I/cvmfs/larsoft.opensciencegrid.org/products/canvas/v3_03_03/include
+#  LARSOFT_INCLUDES += -I$(CETLIB_INC)
+#  LARSOFT_INCLUDES += -I$(CETLIB_EXCEPT_INC)
+
+#  LARSOFT_LIBRARIES += -L$(CANVAS_LIB)
+#  LARSOFT_LIBRARIES += -L$(CETLIB_LIB)
+#endif
+
+# SBN CAF stuff
+#SBNCAF_INC = -I$(SBNCODE_DIR)/
+
+#-------------------------------------------------------------------
+#                        GENIE
+#-------------------------------------------------------------------
+
+# Add GENIE includes and libaries for apps that depend both on GENIE and VALOR
+# GENIE needs to be enabled to compile those apps
+#
+
+#ifeq(, $(shell which genie-config))
+ifdef GENIE
+ GLIBRARIES = $(shell genie-config --libs)
+ 
+ # Hack while GENIE_REWEIGHT independent package is not good at reporting its own libraries
+ ifdef GENIE_REWEIGHT
+   GLIBRARIES += -L$(GENIE_REWEIGHT)/lib -lGRwFwk -lGRwClc -lGRwIO
+ endif
+ 
+ GINCLUDES  = $(GENIE_INCLUDES)
+ GINCLUDES  := $(GINCLUDES) $(INCLUDES)
+ GLIBRARIES := $(LIBRARIES) $(GLIBRARIES) $(LIBRARIES)
+ ifeq ("false",$(is_cln))
+  VALOR_GLIBRARIES := $(shell valor_fmwk-config --glibs)
+ endif
+endif
+
+
+#-------------------------------------------------------------------
+#                      SUMMING-UP
+#-------------------------------------------------------------------
+
+# includes and libraries needed to compile programs. 
+
+VALOR_INCLUDES := $(VALOR_EXPT_INCLUDES) \
+                  $(VALOR_FMWK_INCLUDES)
+
+INCLUDES  := $(VALOR_EXPT_INCLUDES) \
+             $(VALOR_FMWK_INCLUDES) \
+             $(LOG_INCLUDES) \
+             $(ROOT_INCLUDES) \
+             $(GSL_INCLUDES) \
+             $(LINUX_SYS_INCLUDES)
+
+LIBRARIES := $(SYSLIBS) \
+             $(VALOR_EXPT_LIBRARIES) \
+             $(VALOR_FMWK_LIBRARIES) \
+             $(LOG_LIBRARIES) \
+             $(ROOT_LIBRARIES) \
+             $(GSL_LIBRARIES) \
+             $(GPROF_LIBRARIES) \
+             $(OPT_WITH_MISC_LIBS)
+             
+# Default compiler and preprocessor flags
+
+CXXFLAGS := $(ENV_CXXFLAGS) $(CXXFLAGS)
+CPPFLAGS  = $(INCLUDES)
+CFLAGS    = $(OPT_WITH_CXX_DEBUG_FLAG)
+
