@@ -1,0 +1,8 @@
+# argument                         |   type         |  require?   |   default
+# .....................................................................................................
+input                              |   string       |  mandatory  |   -
+output                             |   string       |  mandatory  |  valor_recoselection_minidst.root
+sample                             |   string       |  mandatory  |  numuCCIncl
+disable-checks                     |   boolean      |  optional   |  false
+mesg-thresholds                    |   string       |  optional   |  verbosity.xml
+beam                               |   string       |  mandatory  |  BNB_FHC
