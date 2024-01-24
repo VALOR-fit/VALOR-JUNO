@@ -66,7 +66,7 @@ make-bin-lib-dir: FORCE
 # copy-rootdict-to-lib: make-bin-lib-dir build-libs FORCE
 # 	@echo " "
 # 	@echo "** Copying ROOT dictionary PCM files to ${VALOR_EXPT_TOPDIR}/lib"
-# 	$(shell find "${VALOR_EXPT_TOPDIR}/src/sbn/" -name "_RootDict*_rdict.pcm" | xargs -n 1 -I{} cp {} "${VALOR_EXPT_TOPDIR}/lib/" )
+# 	$(shell find "${VALOR_EXPT_TOPDIR}/src/juno/" -name "_RootDict*_rdict.pcm" | xargs -n 1 -I{} cp {} "${VALOR_EXPT_TOPDIR}/lib/" )
 
 purge: FORCE
 	@echo " "
@@ -96,7 +96,7 @@ clean-dir: FORCE
 	[ ! -d ./src/juno/Conventions ] || rmdir ./src/juno/Conventions
 
 force-clean-dir: FORCE
-	@echo "Deleting VALOR/SBN JUNO lib and bin directories...";
+	@echo "Deleting VALOR/JUNO lib and bin directories...";
 	cd $(VALOR_EXPT_TOPDIR);
 	rm -rf ./bin;
 	rm -rf ./lib;

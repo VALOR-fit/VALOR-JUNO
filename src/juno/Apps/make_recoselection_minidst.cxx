@@ -36,9 +36,7 @@
 #include <TSystem.h>
 // VALOR/SDK
 #include "valor/Conventions/Constants.h"
-#include "valor/Conventions/BeamConf.h"
 #include "valor/Conventions/ReacMode.h"
-#include "valor/Conventions/Sample.h"
 #include "valor/Messenger/Messenger.h"
 #include "valor/Utilities/Env.h"
 #include "valor/CmdLine/CmdLnArgList.h"
@@ -103,20 +101,10 @@ int main(int argc, char ** argv)
   std::string thresholds = util::CompleteConfigPath(arg.GetString("mesg-thresholds"));
   Messenger::Instance()->Configure(thresholds);
 
-  string opt_beam_name         = arg.GetString("beam");
-  string opt_sample_name       = arg.GetString("sample");
   string opt_output_name       = arg.GetString("output");
   string opt_input_name        = arg.GetString("input");
   bool   opt_disable_checks    = arg.GetBool("disable-checks");
 
-  conv::Sample_t sample = util::SampleFromString(opt_sample_name);
-  assert(sample != conv::ksUndefined);
-
-  conv::BeamConf_t beam = util::BeamConfFromString(opt_beam_name);
-  assert(beam != conv::kbUndefined);
-
-  int    valor_minidst_sample         = sample;
-  int    valor_minidst_beam           = -1;  // see Conventions/BeamConf.h
   int    valor_minidst_reac_mode      = -1;  // see Conventions/ReacMode.h
   int    valor_minidst_target         = -1;  // nuclear target -  GENIE PDG convention
   double valor_minidst_enu_true       = -1.; // true neutrino energy, in GeV
@@ -136,8 +124,6 @@ int main(int argc, char ** argv)
   TTree * valor_minidst =
   new TTree("valor_juno_minidst","Mini-DST input for VALOR/JUNO fit");
 
-  valor_minidst->Branch("beam"          , &valor_minidst_beam          ,"beam/I"           );
-  valor_minidst->Branch("sample"        , &valor_minidst_sample        ,"sample/I"         );
   valor_minidst->Branch("reac_mode"     , &valor_minidst_reac_mode     ,"reac_mode/I"      );
   valor_minidst->Branch("target"        , &valor_minidst_target        ,"target/I"         );
   valor_minidst->Branch("enu_true"      , &valor_minidst_enu_true      ,"enu_true/D"       );
@@ -261,8 +247,6 @@ int main(int argc, char ** argv)
     VLOG("valor_juno",pDEBUG) << "Read event: "
       << "Etrue         = "<< enu_true  << " GeV; ";
 
-    valor_minidst_sample         = sample;
-    valor_minidst_beam           = beam;
     valor_minidst_reac_mode      = reac_mode;
     valor_minidst_enu_true       = enu_true;
     valor_minidst_wght           = 1.;
@@ -275,9 +259,7 @@ int main(int argc, char ** argv)
     valor_minidst_reco_exclusive = reco_exclusive;
 
     VLOG("valor_juno", pINFO)
-      << "\n Information copied to VALOR SBN recoselection Mini-DST: "
-      << "\n Beam          = " << valor_minidst_beam
-      << "\n Sample        = " << valor_minidst_sample
+      << "\n Information copied to VALOR JUNO recoselection Mini-DST: "
       << "\n Reaction mode = " << valor_minidst_reac_mode
       << "\n Target        = " << valor_minidst_target
       << "\n Q2 (true)     = " << valor_minidst_Q2_true << " GeV^2"

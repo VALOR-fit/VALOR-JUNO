@@ -14,7 +14,7 @@ include $(VALOR_EXPT)/make/Make.include
 
 JUNO_LIBRARIES =
 
-TGT = make_junocode_minidst \
+TGT = make_recoselection_minidst \
       make_caf_minidst \
       make_xsec_splines \
       make_flux_splines \
@@ -29,13 +29,13 @@ all: $(TGT)
 make_junocode_minidst: FORCE
 ifeq ($(JUNOANALYSIS_ENABLED),1)
 ifdef GENIE
-	$(CXX) $(CXXFLAGS) -c make_junocode_minidst.cxx $(GINCLUDES) $(JUNOANALYSIS_INC) $(LARSOFT_INCLUDES)
-	$(LD) $(LDFLAGS) make_junocode_minidst.o $(GLIBRARIES) $(VALOR_GLIBRARIES) $(JUNOANALYSIS_LIB) -o $(VALOR_EXPT)/bin/valor_juno-make_junocode_minidst
+	$(CXX) $(CXXFLAGS) -c make_recoselection_minidst.cxx $(GINCLUDES) $(JUNOANALYSIS_INC) $(LARSOFT_INCLUDES)
+	$(LD) $(LDFLAGS) make_recoselection_minidst.o $(GLIBRARIES) $(VALOR_GLIBRARIES) $(JUNOANALYSIS_LIB) -o $(VALOR_EXPT)/bin/valor_juno-make_junocode_minidst
 else
-	@echo "Skipping make_junocode_minidst due to no GENIE"
+	@echo "Skipping make_recoselection_minidst due to no GENIE"
 endif
 else
-	@echo "Skipping make_junocode_minidst due to no JUNOanalysis"
+	@echo "Skipping make_recoselection_minidst due to no JUNOanalysis"
 endif
 
 # Generate DSTs from CAF files

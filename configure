@@ -20,7 +20,7 @@ if(($match = grep(/--help/i, @ARGV)) > 0) {
   print "\n enable/disable options with either --enable- or --disable- (eg --enable-lhapdf --disable-flux-drivers)\n\n";
   print "    debug               Adds -g in the compiler options to request debug info         default: disabled \n";
   print "    low-level-messages  Turns on error logging in speed-critical areas.               default: disabled \n";
-  print "    sbnana              Turns on SBNanalysis integration                              default: if_exists \n";
+  print "    junoana              Turns on JUNOanalysis integration                              default: if_exists \n";
   print "\n options for 3rd party software, prefix with --with- (eg --with-lhapdf-lib=/some/path/)\n\n";
   print "    compiler          Compiler to use (any of clang,g++)                          default: use what the framework uses \n";
   print "    optimiz-level     Compiler optimization (any of O,O2,O3,OO,Os)                default: O2 \n";
