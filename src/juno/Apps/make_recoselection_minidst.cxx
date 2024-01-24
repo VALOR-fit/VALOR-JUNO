@@ -217,8 +217,8 @@ int main(int argc, char ** argv)
     }
 
     analysis_tree->GetEntry(iev);
-    conv::ReacType_t reac = conv::kmtUndefined;
-    if (iscc) {// start counting pions
+    conv::ReacType_t reac = conv::kmtUndefined; 
+  if (iscc) { 
         if      (nkaons )                      {reac = conv::kmtCCoth;}
         else if (npip+npim == 1 && npi0 == 0)  {reac = conv::kmtCC1piC;}
         else if (npip+npim == 0 && npi0 == 1)  {reac = conv::kmtCC1pi0;}
@@ -226,8 +226,8 @@ int main(int argc, char ** argv)
         else if (npip+npim == 0 && npi0 == 2)  {reac = conv::kmtCC2pi0;}
         else if (npip+npim == 1 && npi0 == 1)  {reac = conv::kmtCCpiCpi0;}
         else                                   {reac = conv::kmtCCoth;}
-    }
-    else if (isnc) {// start counting pions
+  }
+    else if (isnc) { // start counting pions
         if      (nkaons)                       {reac = conv::kmtNCoth;}
         else if (npip+npim == 1 && npi0 == 0)  {reac = conv::kmtNC1piC;}
         else if (npip+npim == 0 && npi0 == 1)  {reac = conv::kmtNC1pi0;}
@@ -236,9 +236,11 @@ int main(int argc, char ** argv)
         else if (npip+npim == 1 && npi0 == 1)  {reac = conv::kmtNCpiCpi0;}
         else                                   {reac = conv::kmtNCoth;}
     }
-    }
+  else {
+    reac = conv::kmtOther;
+  }
 
-    else reac = conv::kmtOther;
+
 
     conv::NuFlavour_t final_flav = valor::util::FlavourFromPDG(nu_pdg);
     conv::NuFlavour_t init_flav = final_flav;
