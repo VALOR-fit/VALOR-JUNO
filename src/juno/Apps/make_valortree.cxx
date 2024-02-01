@@ -2,11 +2,8 @@
 #include <ROOT/RDFHelpers.hxx>
 #include <ROOT/RDataFrame.hxx>
 
-#include <sstream>
-#include <string>
-#include <vector>
-
 // System
+#include <vector>
 #include <string>
 #include <iostream>
 #include <sstream>
