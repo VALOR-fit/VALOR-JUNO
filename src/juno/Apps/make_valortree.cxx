@@ -40,13 +40,10 @@
 #include "Framework/Utils/CmdLnArgParser.h"
 #include "Framework/Utils/RunOpt.h"
 
-
 using std::string;
 using namespace genie;
 
-
-
-int processEvents(const std::vector<std::string>& inputFiles) {
+int processEvents(const std::vector<std::string>& inputFiles, const std::string& outputFileName) {
   TChain* ghep_tree = new TChain("gtree");
   ghep_tree->SetMaxVirtualSize(-1);
   for (const auto& file : inputFiles) {
@@ -56,7 +53,7 @@ int processEvents(const std::vector<std::string>& inputFiles) {
   genie::NtpMCEventRecord *mcrec = nullptr;
   ghep_tree->SetBranchAddress("gmcrec", &mcrec);
   
-  TFile* outputFile = new TFile("test.root", "RECREATE");
+  TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE");
   TTree* outputTree = new TTree("mytree", "Processed Data");
   double Q2, W;
   outputTree->Branch("Q2", &Q2);
@@ -83,14 +80,14 @@ int processEvents(const std::vector<std::string>& inputFiles) {
 }
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
-    std::cout << "Usage: " << argv[0] << " <input files>" << std::endl;
+  if (argc < 3) { // Change here to require at least one input file and an output file name
+    std::cout << "Usage: " << argv[0] << " <input files> <output file name>" << std::endl;
     return 1;
   }
   std::vector<std::string> inputFiles;
-  for (int i = 1; i < argc; ++i) {
+  for (int i = 1; i < argc - 1; ++i) { // Adjust here to reserve the last argument for the output file name
     inputFiles.emplace_back(argv[i]);
   }
-    return processEvents(inputFiles);
+  std::string outputFileName = argv[argc - 1]; // Get the last argument as the output file name
+  return processEvents(inputFiles, outputFileName);
 }
-
