@@ -27,15 +27,60 @@
 #include "valor/Utilities/UtlStr.h"
 #include "valor/Utilities/UtlSystem.h"
 #include "valor/Utilities/Rnd.h"
-#include "valor/GENIEUtilities/GENIEIncludes.h"
-#include "valor/GENIEUtilities/UtlEventRec.h"
 
-#include "Framework/EventGen/EventRecord.h"
+// GENIE section
 #include "Framework/GHEP/GHepParticle.h"
 #include "Framework/Ntuple/NtpMCEventRecord.h"
+#include "Framework/Conventions/GBuild.h"
+#include "Framework/EventGen/EventRecord.h"
+#include "Framework/Ntuple/NtpMCFormat.h"
+#include "Framework/Ntuple/NtpMCTreeHeader.h"
+#include "Framework/Messenger/Messenger.h"
+#include "Framework/ParticleData/PDGLibrary.h"
+#include "Framework/Utils/CmdLnArgParser.h"
+#include "Framework/Utils/RunOpt.h"
+
+
+using std::string;
+using namespace genie;
 
 
 
+int processEvents(const std::vector<std::string>& inputFiles) {
+  TChain* ghep_tree = new TChain("gtree");
+  ghep_tree->SetMaxVirtualSize(-1);
+  for (const auto& file : inputFiles) {
+    ghep_tree->Add(file.c_str());
+  }
+  
+  genie::NtpMCEventRecord *mcrec = nullptr;
+  ghep_tree->SetBranchAddress("gmcrec", &mcrec);
+  
+  TFile* outputFile = new TFile("test.root", "RECREATE");
+  TTree* outputTree = new TTree("mytree", "Processed Data");
+  double Q2, W;
+  outputTree->Branch("Q2", &Q2);
+  outputTree->Branch("W", &W);
+  
+  Long64_t nentries = ghep_tree->GetEntries();
+  for (Long64_t i = 0; i < nentries; ++i) {
+    ghep_tree->GetEntry(i);
+    
+    if (mcrec && mcrec->event) {
+      Q2 = mcrec->event->Summary()->Kine().Q2(true);
+      W = mcrec->event->Summary()->Kine().W(true);
+      outputTree->Fill();
+    }
+  }
+  
+  outputTree->Write();
+  outputFile->Close();
+  
+  delete ghep_tree;
+  delete outputFile; // Also deletes outputTree
+  
+  return 0;
+}
 
 int main(int argc, char **argv) {
   if (argc < 2) {
@@ -46,20 +91,6 @@ int main(int argc, char **argv) {
   for (int i = 1; i < argc; ++i) {
     inputFiles.emplace_back(argv[i]);
   }
-
-  ROOT::EnableImplicitMT();
-
-  ROOT::RDataFrame df("gtree", inputFiles);
-  auto f = df.Define("Q2",
-                     [](const genie::NtpMCEventRecord &mcrec) {
-                       return mcrec.event->Summary()->Kine().Q2(true);
-                     },
-                     {"gmcrec"})
-               .Define("W",
-                       [](const genie::NtpMCEventRecord &mcrec) {
-                         return mcrec.event->Summary()->Kine().W(true);
-                       },
-                       {"gmcrec"})
-               .Snapshot("mytree", "test.root", {"Q2", "W"});
-  return 0;
+    return processEvents(inputFiles);
 }
+
