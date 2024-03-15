@@ -14,29 +14,36 @@ include $(VALOR_EXPT)/make/Make.include
 
 JUNO_LIBRARIES =
 
-TGT = make_recoselection_minidst \
-      make_caf_minidst \
-      make_xsec_splines \
-      make_flux_splines \
-      universe_variation_tweaks \
-      write_spectra_using_universes \
-      tweak_pdf_nsigma_var 
+TGT = make_valortree \
+ 
 
 all: $(TGT)
 
 # Generate DSTs for JUNOCode fit
-#
-make_junocode_minidst: FORCE
+make_valortree: FORCE
+ifeq ($(JUNOANALYSIS_ENABLED),0)
+ifdef GENIE
+	$(CXX) $(CXXFLAGS) -c make_valortree.cxx $(GINCLUDES)
+	$(LD) $(LDFLAGS) make_valortree.o $(GLIBRARIES) $(VALOR_GLIBRARIES) -o $(VALOR_EXPT)/bin/valor_juno-make_valortree
+else
+	@echo "Skipping make_valortree due to no GENIE"
+endif
+else
+	@echo "Skipping make_valortree due to no JUNOanalysis"
+endif
+
+# Transform the data from GENIE to valor
 ifeq ($(JUNOANALYSIS_ENABLED),1)
 ifdef GENIE
-	$(CXX) $(CXXFLAGS) -c make_recoselection_minidst.cxx $(GINCLUDES) $(JUNOANALYSIS_INC) $(LARSOFT_INCLUDES)
-	$(LD) $(LDFLAGS) make_recoselection_minidst.o $(GLIBRARIES) $(VALOR_GLIBRARIES) $(JUNOANALYSIS_LIB) -o $(VALOR_EXPT)/bin/valor_juno-make_junocode_minidst
+	$(CXX) $(CXXFLAGS) -c make_valortree.cxx $(GINCLUDES)  $(LARSOFT_INCLUDES)
+	$(LD) $(LDFLAGS) make_valortree.o $(GLIBRARIES) $(VALOR_GLIBRARIES) -o $(VALOR_EXPT)/$/bin/valor_juno-make_valortree
 else
-	@echo "Skipping make_recoselection_minidst due to no GENIE"
+	@echo "Skipping make_valortree due to no GENIE"
 endif
 else
-	@echo "Skipping make_recoselection_minidst due to no JUNOanalysis"
+	@echo "Skipping make_valortree.cxx due to no JUNOanalysis"
 endif
+
 
 # Generate DSTs from CAF files
 #
