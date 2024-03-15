@@ -55,9 +55,11 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
   
   TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE");
   TTree* outputTree = new TTree("mytree", "Processed Data");
-  double Q2, W;
+  double Q2, W, E_nu, cos_theta;
   outputTree->Branch("Q2", &Q2);
   outputTree->Branch("W", &W);
+  outputTree->Branch("E_nu", &E_nu);
+  outputTree->Branch("cos_theta", &cos_theta);
   
   Long64_t nentries = ghep_tree->GetEntries();
   for (Long64_t i = 0; i < nentries; ++i) {
@@ -66,7 +68,26 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     if (mcrec && mcrec->event) {
       Q2 = mcrec->event->Summary()->Kine().Q2(true);
       W = mcrec->event->Summary()->Kine().W(true);
+      E_nu = mcrec->event->Summary()->InitState().ProbeE(kRfLab);
+      
+      TVector3 nu_direction(0, 0, 1);
+      genie::GHepParticle* lepton = nullptr;
+      for (int i = 0; i < mcrec->event->GetEntries(); ++i) {
+        genie::GHepParticle* p = mcrec->event->Particle(i);
+        if (p->Status() == genie::kIStStableFinalState && 
+            (p->Pdg() == 11 || p->Pdg() == -11 || // electron or positron
+             p->Pdg() == 13 || p->Pdg() == -13))
+           { // muon or antimuon
+            lepton = p;
+            break;
+        }
+      if (lepton) {
+        TVector3 lepton_momentum = lepton->P4()->Vect();
+        lepton_momentum.SetMag(1); // Normalize to get direction
+        cos_theta = nu_direction.Dot(lepton_momentum);
+      } 
       outputTree->Fill();
+     }
     }
   }
   
