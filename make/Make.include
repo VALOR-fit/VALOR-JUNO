@@ -96,8 +96,8 @@ ifdef GENIE
  endif
  
  GINCLUDES  = $(GENIE_INCLUDES)
- GINCLUDES  := $(GINCLUDES) $(INCLUDES)
- GLIBRARIES := $(LIBRARIES) $(GLIBRARIES) $(LIBRARIES)
+ GINCLUDES  := $(INCLUDES)
+ GLIBRARIES := $(LIBRARIES) $(LIBRARIES)
  ifeq ("false",$(is_cln))
   VALOR_GLIBRARIES := $(shell valor_fmwk-config --glibs)
  endif
