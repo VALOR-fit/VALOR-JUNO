@@ -28,14 +28,13 @@
 #include "valor/Utilities/UtlSystem.h"
 #include "valor/Utilities/Rnd.h"
 
-// GENIE section
+// GENIE
 #include "Framework/GHEP/GHepParticle.h"
 #include "Framework/Ntuple/NtpMCEventRecord.h"
 #include "Framework/Conventions/GBuild.h"
 #include "Framework/EventGen/EventRecord.h"
 #include "Framework/Ntuple/NtpMCFormat.h"
 #include "Framework/Ntuple/NtpMCTreeHeader.h"
-#include "Framework/Messenger/Messenger.h"
 #include "Framework/ParticleData/PDGLibrary.h"
 #include "Framework/Utils/CmdLnArgParser.h"
 #include "Framework/Utils/RunOpt.h"
@@ -54,40 +53,28 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
   ghep_tree->SetBranchAddress("gmcrec", &mcrec);
   
   TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE");
-  TTree* outputTree = new TTree("mytree", "Processed Data");
+  TTree* outputTree = new TTree("valor_tree", "Processed Data");
   double Q2, W, E_nu, cos_theta;
   outputTree->Branch("Q2", &Q2);
   outputTree->Branch("W", &W);
   outputTree->Branch("E_nu", &E_nu);
   outputTree->Branch("cos_theta", &cos_theta);
   
-  Long64_t nentries = ghep_tree->GetEntries();
+ Long64_t nentries = ghep_tree->GetEntries();
   for (Long64_t i = 0; i < nentries; ++i) {
     ghep_tree->GetEntry(i);
     
     if (mcrec && mcrec->event) {
+      const genie::EventRecord& event = *(mcrec->event);
+      const TLorentzVector& nuP4 = *(event.Probe()->P4()); 
+      E_nu = nuP4.Energy();
+      if (E_nu < 3.0 || E_nu > 3.4) {
+        continue;}
+      cos_theta = -nuP4.Pz()/E_nu;       
       Q2 = mcrec->event->Summary()->Kine().Q2(true);
       W = mcrec->event->Summary()->Kine().W(true);
-      E_nu = mcrec->event->Summary()->InitState().ProbeE(kRfLab);
-      
-      TVector3 nu_direction(0, 0, 1);
-      genie::GHepParticle* lepton = nullptr;
-      for (int i = 0; i < mcrec->event->GetEntries(); ++i) {
-        genie::GHepParticle* p = mcrec->event->Particle(i);
-        if (p->Status() == genie::kIStStableFinalState && 
-            (p->Pdg() == 11 || p->Pdg() == -11 || // electron or positron
-             p->Pdg() == 13 || p->Pdg() == -13))
-           { // muon or antimuon
-            lepton = p;
-            break;
-        }
-      if (lepton) {
-        TVector3 lepton_momentum = lepton->P4()->Vect();
-        lepton_momentum.SetMag(1); // Normalize to get direction
-        cos_theta = nu_direction.Dot(lepton_momentum);
-      } 
+
       outputTree->Fill();
-     }
     }
   }
   
