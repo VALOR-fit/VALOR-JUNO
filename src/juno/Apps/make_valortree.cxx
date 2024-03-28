@@ -67,7 +67,7 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
   TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE");
   TTree* outputTree = new TTree("valor_tree", "Processed Data");
   double Q2, W, E_true, E_reco, cos_theta;
-  int isnc=0;int iscc=0;int nkaon=0;int npip=0;int npim=0;int npi0=0;int reac_mode=-1;int nu_pdg=-1;
+  int isnc=0;int iscc=0;int nkaon=0;int npip=0;int npim=0;int npi0=0;int reac_mod=-1;int nu_pdg=-1;int event_id=0;
   outputTree->Branch("Q2", &Q2);
   outputTree->Branch("W", &W);
   outputTree->Branch("E_true", &E_true);
@@ -79,8 +79,9 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
   outputTree->Branch("nPionp", &npip);
   outputTree->Branch("nPionm", &npim);
   outputTree->Branch("nPion0", &npi0);
-  outputTree->Branch("reac_mode", &reac_mode);
+  outputTree->Branch("reac_mode", &reac_mod);
   outputTree->Branch("nu_PDG", &nu_pdg);
+  outputTree->Branch("event_id", &event_id);
 
   Long64_t nentries = ghep_tree->GetEntries();
   for (Long64_t i = 0; i < nentries; ++i) {
@@ -93,20 +94,49 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     }
     
     if (mcrec && mcrec->event) {
+      
       const genie::EventRecord& event = *(mcrec->event);
-      const genie::Interaction* interaction = event.Summary();
       const TLorentzVector& nuP4 = *(event.Probe()->P4()); 
+      const genie::Interaction* interaction = event.Summary();
       const genie::GHepParticle *neutrino = event.Probe();
-
+      iscc = 0;  isnc = 0;  npip = 0;  npim = 0;  npi0 = 0;  nkaon = 0; reac_mod=0; event_id=0;
+      
       if (neutrino != nullptr) {
         nu_pdg = neutrino->Pdg();}
-
-      iscc = 0;  isnc = 0;  npip = 0;  npim = 0;  npi0 = 0;  nkaon = 0;
       if (interaction->ProcInfo().IsWeakCC()) {
         iscc = 1;
+        switch (nu_pdg) {
+          case 12: 
+            event_id = 121;
+            break;
+          case -12: 
+            event_id = -121;
+            break;
+          case 14: 
+            event_id = 141;
+            break;
+          case -14: 
+            event_id = -141;
+            break;
+        }
       } else if (interaction->ProcInfo().IsWeakNC()) {
-        isnc = 1;
+        isnc==1;
+        switch (nu_pdg) {
+          case 12: 
+            event_id = 120;
+            break;
+          case -12: 
+            event_id = -120;
+            break;
+          case 14:
+            event_id = 140;
+            break;
+          case -14: 
+            event_id = -140;
+            break;
+        }
       }
+
       TIter iter(event.MakeIterator()); 
       genie::GHepParticle* p = nullptr;
       while ((p = dynamic_cast<genie::GHepParticle*>(iter.Next()))) {
@@ -143,13 +173,15 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     else {
         reac = valor::conv::kmtOther;
     }
-
+    VLOG("valor_juno",pDEBUG) << "Read event: " << "Reac         = "<< reac ;
     valor::conv::NuFlavour_t final_flav = valor::util::FlavourFromPDG(nu_pdg);
     valor::conv::NuFlavour_t init_flav = final_flav;
 
     // Get the real valor mode
     valor::conv::ReacMode_t  reac_mode  = valor::util::ReacTypeToMode(reac,init_flav,final_flav);
-
+    VLOG("valor_juno",pDEBUG) << "Read event: " << "Reac mode     = "<< reac_mode ;
+    reac_mod=reac_mode;
+    
     E_true = nuP4.Energy();
     VLOG("valor_juno",pDEBUG) << "Read event: "
       << "Etrue         = "<< E_true  << " GeV; ";

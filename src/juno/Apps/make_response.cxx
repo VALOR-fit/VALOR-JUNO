@@ -21,6 +21,7 @@ int processEvents(float efficiency, const std::vector<std::string>& inputFiles, 
     ghep_tree->Add(file.c_str());
   }
 
+  int discarded = 0; // Fixed missing semicolon
   genie::NtpMCEventRecord *mcrec = nullptr;
   ghep_tree->SetBranchAddress("gmcrec", &mcrec);
 
@@ -33,6 +34,8 @@ int processEvents(float efficiency, const std::vector<std::string>& inputFiles, 
   outputTree->Branch("cos_theta_reco", &cos_reco);
 
   Long64_t nentries = ghep_tree->GetEntries();
+  Long64_t processed = 0; // To track processed events
+
   for (Long64_t i = 0; i < nentries; ++i) {
     ghep_tree->GetEntry(i);
     if (gPrintEveryNEvents && !(i % gPrintEveryNEvents)) {
@@ -41,8 +44,11 @@ int processEvents(float efficiency, const std::vector<std::string>& inputFiles, 
 
     float randValue = randomGen.Uniform();
     if (randValue > efficiency) {
+        discarded++;
         continue; 
     }
+
+    processed++; // Increment for each processed event
 
     if (mcrec && mcrec->event) {
       const genie::EventRecord& event = *(mcrec->event);
@@ -50,10 +56,11 @@ int processEvents(float efficiency, const std::vector<std::string>& inputFiles, 
       E_true = nuP4.Energy();
       cos_true = -nuP4.Pz() / E_true;
 
-      double sigma = 3 / sqrt(E_true);
-      E_reco = randomGen.Gaus(E_true, sigma);
+      double E_sigma = 3 / sqrt(E_true);
+      E_reco = randomGen.Gaus(E_true, E_sigma);
       
-    
+      double cos_sigma = 1 / 2.35482; // Assuming sigma for Gaussian distribution of cos(theta)
+      cos_reco = randomGen.Gaus(cos_true, cos_sigma); // Fixed missing semicolon
       outputTree->Fill();
     }
   }
@@ -62,12 +69,15 @@ int processEvents(float efficiency, const std::vector<std::string>& inputFiles, 
   outputFile->Close();
 
   delete ghep_tree;
-  delete outputFile; 
-  
-  VLOG("valor_juno", pNOTICE)  << "Done!";
+  delete outputFile;
+
+  VLOG("valor_juno", pNOTICE) << "Done!";
+  VLOG("valor_juno", pNOTICE) << "Total events: " << nentries;
+  VLOG("valor_juno", pNOTICE) << "Processed events: " << processed;
+  VLOG("valor_juno", pNOTICE) << "Discarded events: " << discarded;
+
   return 0;
 }
-
 
 int main(int argc, char **argv) {
   if (argc < 4) { 
