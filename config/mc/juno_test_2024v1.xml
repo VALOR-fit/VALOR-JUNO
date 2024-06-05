@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+
+<analysis_inputs analysis="SBN-NDFIT" version="2020a1" detector="ND">
+
+
+<!--
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Input MC templates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+
+<mc>
+  <using_dst_format>
+    true
+  </using_dst_format>
+
+  <dst>
+    <filename> sbn_numu_inclusive/dsts/2020a1/valor_sbncode_fhc_numuccinc_disappearance_nd_minidst_mc.root </filename>
+    <objname> valor_juno_minidst </objname>
+    <objtype> TTree </objtype>
+  </dst>
+
+  <!-- in kg, for calculating CCinc xsec -->
+  <interaction_mass>
+    -999
+  </interaction_mass>
+</mc>
+
+
+<!--
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Modelists
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+<modelist> modelists/fine/JUNO_OscLowE.xml </modelist>
+<coarse_modelist> modelists/coarse/coarse_mode_list_JUNO_numuCCincl.xml </coarse_modelist>
+
+<!--
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Default binning
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+<default_binning> binning/juno_proposal_binning_ereco.xml  </default_binning>
+
+</analysis_inputs>

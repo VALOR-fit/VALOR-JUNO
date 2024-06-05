@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<coarse_mode_list name="JUNO_numuCCincl">
+  <coarse_mode>
+    <name>       numuCCQE  </name>
+    <line_col>   1         </line_col>
+    <fill_col>   867       </fill_col>
+    <fill_sty>   3002      </fill_sty>
+  </coarse_mode>
+  
+
+
+  <coarse_mode>
+    <name>       numuCCMEC  </name>
+    <line_col>   1          </line_col>
+    <fill_col>   905        </fill_col>
+    <fill_sty>   3003       </fill_sty>
+  </coarse_mode>
+  
+
+
+  <coarse_mode>
+    <name>       numuCC1pi </name>
+    <line_col>   1          </line_col>
+    <fill_col>   397        </fill_col>
+    <fill_sty>   3145       </fill_sty>
+  </coarse_mode>
+  
+
+
+  <coarse_mode>
+    <name>       numuCC2pi  </name>
+    <line_col>   1          </line_col>
+    <fill_col>   835        </fill_col>
+    <fill_sty>   3154       </fill_sty>
+  </coarse_mode>
+
+
+  <coarse_mode>
+    <name>       numuCCoth  </name>
+    <line_col>   1          </line_col>
+    <fill_col>   797        </fill_col>
+    <fill_sty>   3144       </fill_sty>
+  </coarse_mode>
+  
+
+
+  <coarse_mode>
+    <name>       numubarCC  </name>
+    <line_col>   1          </line_col>
+    <fill_col>   923        </fill_col>
+    <fill_sty>   3017       </fill_sty>
+  </coarse_mode>
+  
+
+
+  <coarse_mode>
+    <name>       nuenuebarCC  </name>
+    <line_col>   1            </line_col>
+    <fill_col>   820          </fill_col>
+    <fill_sty>   3018         </fill_sty>
+  </coarse_mode>
+  
+
+
+  <!--  <coarse_mode>
+    <name>       NC0pi    </name>
+    <line_col>   1     </line_col>
+    <fill_col>   879   </fill_col>
+    <fill_sty>   3017  </fill_sty>
+  </coarse_mode>-->
+  
+  
+
+  <coarse_mode>
+    <name>       NCoth </name>
+    <line_col>   1     </line_col>
+    <fill_col>   633   </fill_col>
+    <fill_sty>   3018  </fill_sty>
+  </coarse_mode>
+  
+
+
+  <coarse_mode>
+    <name>       cosmic  </name>
+    <line_col>   1       </line_col>
+    <fill_col>   870     </fill_col>
+    <fill_sty>   3001    </fill_sty>
+  </coarse_mode>
+  
+  <coarse_mode>
+    <name>       dirt  </name>
+    <line_col>   1       </line_col>
+    <fill_col>   840     </fill_col>
+    <fill_sty>   3002    </fill_sty>
+  </coarse_mode>
+  
+
+</coarse_mode_list>
