@@ -1,0 +1,23 @@
+valor-run_fit \
+   --config /sps/juno/ycao/VALOR/softw/JUNO/vmaster/config/analysis/juno_test_analysis_2024.xml \
+   --physics-hypothesis 3f_osc \
+   --param-values-option prefit-errors \
+   --osc-prior-file priors/void_priors.xml \
+   --load-prior-from-file - \
+   --fitter minuit+with_simplex_fallback \
+   --mesg-thresholds verbosity.xml \
+   --without-stat-fluct \
+   --tag sbn_toy \
+   --run 1 \
+   --ntoymc 1 \
+   --input-dm41sq         0.      \
+   --fix-at-dm41sq        0.01    \
+   --fix-dm41sq                   \
+   --input-sinsq2thMuMu   0.      \
+   --fix-at-sinsq2thMuMu  0.      \
+   --fix-sinsq2thMuMu             \
+   --input-sinsq2thMuE    0.      \
+   --fix-at-sinsq2thMuE   0.00001 \
+   --fix-sinsq2thMuE              \
+   --input-sinsq2thEE     0.      \
+   --fix-at-sinsq2thEE    0.      \
