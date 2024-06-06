@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<analysis_inputs analysis="SBN-NDFIT" version="2020a1" detector="ND">
+<analysis_inputs analysis="JUNO" version="2024">
 
 
 <!--
@@ -15,7 +15,7 @@ Input MC templates
   </using_dst_format>
 
   <dst>
-    <filename> sbn_numu_inclusive/dsts/2020a1/valor_sbncode_fhc_numuccinc_disappearance_nd_minidst_mc.root </filename>
+    <filename> juno_test/juno_flux.root </filename>
     <objname> valor_juno_minidst </objname>
     <objtype> TTree </objtype>
   </dst>
