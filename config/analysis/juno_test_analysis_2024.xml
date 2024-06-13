@@ -5,14 +5,17 @@
   <element_list name="juno_numu_2024">
    
     <element name="juno_atmo">
+      <detector>     juno_atmo                                            </detector>
+      <beam>         JUNO_Atmo                                            </beam>
+      <sample>       numuCCincl                                           </sample>
       <observable>   Ereco                                                </observable>
       <data>                                                              </data>
       <mc>           mc/juno_test_2024v1.xml                              </mc>
       <data_class>   valor::GenericSingleSampleFitData                    </data_class>
       <model_class>  valor::GenericSingleSampleFitModel                   </model_class>
-      <binning>      binning/juno_proposal_binning_erecp.xml  </binning>
+      <binning>      binning/juno_proposal_binning_ereco.xml              </binning>
     </element>
   
   </element_list>
 
-</valor> 
+</valor>

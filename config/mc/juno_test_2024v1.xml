@@ -3,6 +3,19 @@
 <analysis_inputs analysis="JUNO" version="2024">
 
 
+  <data>
+    <exposure>
+      <juno_atmo>
+      -999
+      </juno_atmo>
+    </exposure>
+  </data>
+
+
+<fiducial_mass>
+  -1 <!-- simulated mass was 1.13kt. Desired mass is 40kt -->
+</fiducial_mass>
+
 <!--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Input MC templates
@@ -15,9 +28,11 @@ Input MC templates
   </using_dst_format>
 
   <dst>
-    <filename> juno_test/juno_flux.root </filename>
-    <objname> valor_juno_minidst </objname>
-    <objtype> TTree </objtype>
+    <juno_atmo>
+      <filename> juno_test/juno_flux.root </filename>
+      <objname> juno_reco_dst </objname>
+      <objtype> TTree </objtype>
+    </juno_atmo>
   </dst>
 
   <!-- in kg, for calculating CCinc xsec -->
