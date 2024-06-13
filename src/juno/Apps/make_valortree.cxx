@@ -51,213 +51,261 @@ using std::string;
 using namespace genie;
 using namespace valor; 
 
-int processEvents(const std::vector<std::string>& inputFiles, const std::string& outputFileName, const string& sampleName, bool otherSample, bool calculateAppearance) {
-  TChain* ghep_tree = new TChain("gtree");
-  static const int gPrintEveryNEvents = 500000;
-  ghep_tree->SetMaxVirtualSize(-1);
-  for (const auto& file : inputFiles) {
-    ghep_tree->Add(file.c_str());
-  }
-  
-  genie::NtpMCEventRecord *mcrec = nullptr;
-  ghep_tree->SetBranchAddress("gmcrec", &mcrec);
-  
-  TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE");
-  TTree* outputTree = new TTree("juno_true_tree", "Processed Data");
-  double Q2, W, E_true, costh_true, costh_reco, wght;
-  int isnc = 0, iscc = 0, nkaon = 0, npip = 0, npim = 0, npi0 = 0, reac_mod = -1, nu_pdg = -1, event_id = 0, sample_branch = -1, beam = -1;
-  outputTree->Branch("Q2", &Q2);
-  outputTree->Branch("W", &W);
-  outputTree->Branch("enu_true", &E_true);
-  outputTree->Branch("costh_true", &costh_true);
-  outputTree->Branch("costh_reco", &costh_reco);
-  outputTree->Branch("nCC", &isnc);
-  outputTree->Branch("nNC", &iscc);
-  outputTree->Branch("nKaon", &nkaon);
-  outputTree->Branch("nPionp", &npip);
-  outputTree->Branch("nPionm", &npim);
-  outputTree->Branch("nPion0", &npi0);
-  outputTree->Branch("reac_mode", &reac_mod);
-  outputTree->Branch("nu_PDG", &nu_pdg);
-  outputTree->Branch("event_id", &event_id);
-  outputTree->Branch("wght", &wght); 
-  outputTree->Branch("sample", &sample_branch);  
-  outputTree->Branch("beam", &beam);  
+enum SampleType {
+    kNuMuCC,
+    kNuMuCC0pi1trk,
+    kNuMuCC0pi2trk,
+    kNuMuCC1piC,
+    kNuMuCC1pi0,
+    kNuMuCC1piC1pi0,
+    kNuMuCCoth,
+    kNuECC0pi,
+    kNuECC1piC,
+    kNuECC1pi0,
+    kNuECCoth,
+    kUndefined
+};
 
-  NuOsc3Flavour osc; // Create NuOsc3Flavour instance
-  osc.SetBaseline(12742); // Set baseline distance in kilometers
-  osc.SetDensity(2.6); // Set density in g/cm^3
-  osc.SetMassHierarchy(valor::conv::NuMassHierarchy_t::kNmhNormal); // Set mass hierarchy
-  osc.SetOscParameters(0.846, 0.093, 0.528, 7.53e-5, 2.44e-3, 1.36); // Set oscillation parameters
+std::string SampleTypeToString(SampleType sample) {
+    switch (sample) {
+        case kNuMuCC: return "numuCC";
+        case kNuMuCC0pi1trk: return "numuCC0pi1trk";
+        case kNuMuCC0pi2trk: return "numuCC0pi2trk";
+        case kNuMuCC1piC: return "numuCC1piC";
+        case kNuMuCC1pi0: return "numuCC1pi0";
+        case kNuMuCC1piC1pi0: return "numuCC1piC1pi0";
+        case kNuMuCCoth: return "numuCCoth";
+        case kNuECC0pi: return "nueCC0pi";
+        case kNuECC1piC: return "nueCC1piC";
+        case kNuECC1pi0: return "nueCC1pi0";
+        case kNuECCoth: return "nueCCoth";
+        default: return "undefined";
+    }
+}
 
-  TRandom randomGen; // Create random number generator instance
+SampleType InferSampleType(int npi, int npi0, int ntrk, bool is_nue) {
+    if (is_nue) {
+        if (npi == 0 && npi0 == 0) return kNuECC0pi;
+        if (npi == 1 && npi0 == 0) return kNuECC1piC;
+        if (npi == 0 && npi0 == 1) return kNuECC1pi0;
+        return kNuECCoth;
+    } else {
+        if (npi == 0 && npi0 == 0 && ntrk == 1) return kNuMuCC0pi1trk;
+        if (npi == 0 && npi0 == 0 && ntrk == 2) return kNuMuCC0pi2trk;
+        if (npi == 1 && npi0 == 0) return kNuMuCC1piC;
+        if (npi == 0 && npi0 == 1) return kNuMuCC1pi0;
+        if (npi == 1 && npi0 == 1) return kNuMuCC1piC1pi0;
+        return kNuMuCCoth;
+    }
+}
 
-  Long64_t nentries = ghep_tree->GetEntries();
-
-  conv::Sample_t sample = util::SampleFromString(sampleName);
- 
-  sample_branch = sample;
-  beam = valor::conv::kbAtmo_JUNO; 
-
-  int savedEvents = 0; 
-  for (Long64_t i = 0; i < nentries; ++i) {
-    ghep_tree->GetEntry(i);
-    if (gPrintEveryNEvents && !(i % gPrintEveryNEvents)) {
-      VLOG("valor_juno", pNOTICE) << "** Reading event: " << i;
+int processEvents(const std::vector<std::string>& inputFiles, const std::string& outputFileName, bool otherSample, bool calculateAppearance) {
+    TChain* ghep_tree = new TChain("gtree");
+    static const int gPrintEveryNEvents = 500000;
+    ghep_tree->SetMaxVirtualSize(-1);
+    for (const auto& file : inputFiles) {
+        ghep_tree->Add(file.c_str());
     }
 
-    if (mcrec && mcrec->event) {
-      const genie::EventRecord& event = *(mcrec->event);
-      const TLorentzVector& nuP4 = *(event.Probe()->P4());
-      const genie::Interaction* interaction = event.Summary();
-      const genie::GHepParticle* neutrino = event.Probe();
-      iscc = 0; isnc = 0; npip = 0; npim = 0; npi0 = 0; nkaon = 0; reac_mod = 0; event_id = 0;
+    genie::NtpMCEventRecord *mcrec = nullptr;
+    ghep_tree->SetBranchAddress("gmcrec", &mcrec);
 
-      if (neutrino != nullptr) {
-        nu_pdg = neutrino->Pdg();
-      }
-      if (interaction->ProcInfo().IsWeakCC()) {
-        iscc = 1;
-        switch (nu_pdg) {
-          case 12:
-            event_id = 121;
-            break;
-          case -12:
-            event_id = -121;
-            break;
-          case 14:
-            event_id = 141;
-            break;
-          case -14:
-            event_id = -141;
-            break;
+    TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE");
+    TTree* outputTree = new TTree("juno_true_tree", "Processed Data");
+    double Q2, W, E_true, costh_true, costh_reco, wght;
+    int isnc = 0, iscc = 0, nkaon = 0, npip = 0, npim = 0, npi0 = 0, reac_mod = -1, nu_pdg = -1, event_id = 0, sample_branch = -1, beam = -1;
+    outputTree->Branch("Q2", &Q2);
+    outputTree->Branch("W", &W);
+    outputTree->Branch("enu_true", &E_true);
+    outputTree->Branch("costh_true", &costh_true);
+    outputTree->Branch("costh_reco", &costh_reco);
+    outputTree->Branch("nCC", &isnc);
+    outputTree->Branch("nNC", &iscc);
+    outputTree->Branch("nKaon", &nkaon);
+    outputTree->Branch("nPionp", &npip);
+    outputTree->Branch("nPionm", &npim);
+    outputTree->Branch("nPion0", &npi0);
+    outputTree->Branch("reac_mode", &reac_mod);
+    outputTree->Branch("nu_PDG", &nu_pdg);
+    outputTree->Branch("event_id", &event_id);
+    outputTree->Branch("wght", &wght);
+    outputTree->Branch("sample", &sample_branch);
+    outputTree->Branch("beam", &beam);
+
+    NuOsc3Flavour osc; // Create NuOsc3Flavour instance
+    osc.SetBaseline(12742); // Set baseline distance in kilometers
+    osc.SetDensity(2.6); // Set density in g/cm^3
+    osc.SetMassHierarchy(valor::conv::NuMassHierarchy_t::kNmhNormal); // Set mass hierarchy
+    osc.SetOscParameters(0.846, 0.093, 0.528, 7.53e-5, 2.44e-3, 1.36); // Set oscillation parameters
+
+    TRandom randomGen; // Create random number generator instance
+
+    Long64_t nentries = ghep_tree->GetEntries();
+
+    beam = valor::conv::kbAtmo_JUNO;
+
+    int savedEvents = 0;
+    for (Long64_t i = 0; i < nentries; ++i) {
+        ghep_tree->GetEntry(i);
+        if (gPrintEveryNEvents && !(i % gPrintEveryNEvents)) {
+            VLOG("valor_juno", pNOTICE) << "** Reading event: " << i;
         }
-      } else if (interaction->ProcInfo().IsWeakNC()) {
-        isnc = 1;
-        switch (nu_pdg) {
-          case 12:
-            event_id = 120;
-            break;
-          case -12:
-            event_id = -120;
-            break;
-          case 14:
-            event_id = 140;
-            break;
-          case -14:
-            event_id = -140;
-            break;
+
+        if (mcrec && mcrec->event) {
+            const genie::EventRecord& event = *(mcrec->event);
+            const TLorentzVector& nuP4 = *(event.Probe()->P4());
+            const genie::Interaction* interaction = event.Summary();
+            const genie::GHepParticle* neutrino = event.Probe();
+            iscc = 0; isnc = 0; npip = 0; npim = 0; npi0 = 0; nkaon = 0; reac_mod = 0; event_id = 0;
+
+            if (neutrino != nullptr) {
+                nu_pdg = neutrino->Pdg();
+            }
+            if (interaction->ProcInfo().IsWeakCC()) {
+                iscc = 1;
+                switch (nu_pdg) {
+                    case 12:
+                        event_id = 121;
+                        break;
+                    case -12:
+                        event_id = -121;
+                        break;
+                    case 14:
+                        event_id = 141;
+                        break;
+                    case -14:
+                        event_id = -141;
+                        break;
+                }
+            } else if (interaction->ProcInfo().IsWeakNC()) {
+                isnc = 1;
+                switch (nu_pdg) {
+                    case 12:
+                        event_id = 120;
+                        break;
+                    case -12:
+                        event_id = -120;
+                        break;
+                    case 14:
+                        event_id = 140;
+                        break;
+                    case -14:
+                        event_id = -140;
+                        break;
+                }
+            }
+
+            TIter iter(event.MakeIterator());
+            genie::GHepParticle* p = nullptr;
+            while ((p = dynamic_cast<genie::GHepParticle*>(iter.Next()))) {
+                if (p->Status() == genie::kIStStableFinalState) {
+                    int pdg = p->Pdg();
+                    if (pdg == genie::kPdgPiP) npip++;
+                    else if (pdg == genie::kPdgPiM) npim++;
+                    else if (pdg == genie::kPdgPi0) npi0++;
+                    if (pdg == genie::kPdgKP || pdg == genie::kPdgKM || pdg == genie::kPdgK0 || pdg == genie::kPdgAntiK0) {
+                        nkaon++;
+                    }
+                }
+            }
+
+            valor::conv::ReacMode_t reac_mode = valor::util::DetermineReactionMode(&event, false);
+            reac_mod = reac_mode;
+
+            E_true = nuP4.Energy();
+            VLOG("valor_juno", pDEBUG) << "Read event: "
+                                       << "Etrue = " << E_true << " GeV; ";
+
+            costh_true = -nuP4.Pz() / E_true;
+            Q2 = mcrec->event->Summary()->Kine().Q2(true);
+            W = mcrec->event->Summary()->Kine().W(true);
+
+            // Calculate survival and transition probabilities
+            double osc_probs[3][3];
+            if (nu_pdg > 0) { // Neutrino
+                osc.CalcMatterOscProbAll(false, E_true, osc_probs);
+            } else { // Antineutrino
+                osc.CalcMatterOscProbAll(true, E_true, osc_probs);
+            }
+
+            double prob_threshold;
+            if (calculateAppearance) { // Calculate appearance probability
+                if (nu_pdg == 14) {
+                    prob_threshold = osc_probs[0][1]; // P(ν_μ -> ν_e)
+                } else if (nu_pdg == -14) {
+                    prob_threshold = osc_probs[0][1]; // P(ν̄_μ -> ν̄_e)
+                } else {
+                    prob_threshold = 0.0;
+                }
+            } else { // Calculate survival probability
+                switch (nu_pdg) {
+                    case 12:
+                        prob_threshold = osc_probs[0][0]; // P(ν_e -> ν_e)
+                        break;
+                    case -12:
+                        prob_threshold = osc_probs[0][0]; // P(ν̄_e -> ν̄_e)
+                        break;
+                    case 14:
+                        prob_threshold = osc_probs[1][1]; // P(ν_μ -> ν_μ)
+                        break;
+                    case -14:
+                        prob_threshold = osc_probs[1][1]; // P(ν̄_μ -> ν̄_μ)
+                        break;
+                    default:
+                        prob_threshold = 0.0;
+                        break;
+                }
+            }
+
+            bool is_nue = (nu_pdg == 12 || nu_pdg == -12);
+            SampleType sample = InferSampleType(npip + npim, npi0, iscc, is_nue);
+            sample_branch = sample;
+
+            double random_value = randomGen.Uniform(0.0, 1.0); // Generate a random number between 0 and 1
+            if (random_value <= prob_threshold) {
+                wght = 1.0;  
+                outputTree->Fill(); 
+                savedEvents++; 
+            }
         }
-      }
-
-      TIter iter(event.MakeIterator());
-      genie::GHepParticle* p = nullptr;
-      while ((p = dynamic_cast<genie::GHepParticle*>(iter.Next()))) {
-        if (p->Status() == genie::kIStStableFinalState) {
-          int pdg = p->Pdg();
-          if (pdg == genie::kPdgPiP) npip++;
-          else if (pdg == genie::kPdgPiM) npim++;
-          else if (pdg == genie::kPdgPi0) npi0++;
-          if (pdg == genie::kPdgKP || pdg == genie::kPdgKM || pdg == genie::kPdgK0 || pdg == genie::kPdgAntiK0) {
-            nkaon++;
-          }
-        }
-      }
-
-      valor::conv::ReacMode_t reac_mode = valor::util::DetermineReactionMode(&event, false);
-      reac_mod = reac_mode;
-
-      E_true = nuP4.Energy();
-      VLOG("valor_juno", pDEBUG) << "Read event: "
-                                 << "Etrue = " << E_true << " GeV; ";
-
-      costh_true = -nuP4.Pz() / E_true;
-      Q2 = mcrec->event->Summary()->Kine().Q2(true);
-      W = mcrec->event->Summary()->Kine().W(true);
-
-      // Calculate survival and transition probabilities
-      double osc_probs[3][3];
-      if (nu_pdg > 0) { // Neutrino
-        osc.CalcMatterOscProbAll(false, E_true, osc_probs);
-      } else { // Antineutrino
-        osc.CalcMatterOscProbAll(true, E_true, osc_probs);
-      }
-
-      double prob_threshold;
-      if (calculateAppearance) { // Calculate appearance probability
-        if (nu_pdg == 14) {
-          prob_threshold = osc_probs[0][1]; // P(ν_μ -> ν_e)
-        } else if (nu_pdg == -14) {
-          prob_threshold = osc_probs[0][1]; // P(ν̄_μ -> ν̄_e)
-        } else {
-          prob_threshold = 0.0;
-        }
-      } else { // Calculate survival probability
-        switch (nu_pdg) {
-          case 12:
-            prob_threshold = osc_probs[0][0]; // P(ν_e -> ν_e)
-            break;
-          case -12:
-            prob_threshold = osc_probs[0][0]; // P(ν̄_e -> ν̄_e)
-            break;
-          case 14:
-            prob_threshold = osc_probs[1][1]; // P(ν_μ -> ν_μ)
-            break;
-          case -14:
-            prob_threshold = osc_probs[1][1]; // P(ν̄_μ -> ν̄_μ)
-            break;
-          default:
-            prob_threshold = 0.0;
-            break;
-        }
-      }
-
-      double random_value = randomGen.Uniform(0.0, 1.0); // Generate a random number between 0 and 1
-      if (random_value <= prob_threshold) {
-        wght = 1.0;  
-        outputTree->Fill(); 
-        savedEvents++; 
-      }
     }
-  }
 
-  outputTree->Write();
-  outputFile->Close();
+    outputTree->Write();
+    outputFile->Close();
 
-  delete ghep_tree;
-  delete outputFile; // Also deletes outputTree
-  VLOG("valor_juno", pNOTICE) << "Done!";
-  std::cout << "Total saved events: " << savedEvents << std::endl; // 输出保存的事件数量
+    delete ghep_tree;
+    delete outputFile; // Also deletes outputTree
+    VLOG("valor_juno", pNOTICE) << "Done!";
+    std::cout << "Total saved events: " << savedEvents << std::endl; // 输出保存的事件数量
 
-  return 0;
+    return 0;
 }
 
 int main(int argc, char** argv) {
-  if (argc < 4) {
-    std::cout << "Usage: " << argv[0] << " -s|-a <sample_name> <input files> <output file name>" << std::endl;
-    return 1;
-  }
+    if (argc < 3) {
+        std::cout << "Usage: " << argv[0] << " -s|-a <input files> <output file name>" << std::endl;
+        return 1;
+    }
 
-  bool calculateAppearance = false;
-  bool otherSample = false;
-  int inputStartIndex = 2;
+    bool calculateAppearance = false;
+    bool otherSample = false;
+    int inputStartIndex = 1;
 
-  if (string(argv[1]) == "-a") {
-    calculateAppearance = true;
-    inputStartIndex = 3;
-  } else if (string(argv[1]) == "-s") {
-    calculateAppearance = false;
-    inputStartIndex = 3;
-  } else {
-    std::cout << "Usage: " << argv[0] << " -s|-a <sample_name> <input files> <output file name>" << std::endl;
-    return 1;
-  }
+    if (string(argv[1]) == "-a") {
+        calculateAppearance = true;
+        inputStartIndex = 2;
+    } else if (string(argv[1]) == "-s") {
+        calculateAppearance = false;
+        inputStartIndex = 2;
+    } else {
+        std::cout << "Usage: " << argv[0] << " -s|-a <input files> <output file name>" << std::endl;
+        return 1;
+    }
 
-  std::string sampleName = argv[2];
-  std::vector<std::string> inputFiles;
-  for (int i = inputStartIndex; i < argc - 1; ++i) {
-    inputFiles.emplace_back(argv[i]);
-  }
-  std::string outputFileName = argv[argc - 1];
-  return processEvents(inputFiles, outputFileName, sampleName, otherSample, calculateAppearance);
+    std::vector<std::string> inputFiles;
+    for (int i = inputStartIndex; i < argc - 1; ++i) {
+        inputFiles.emplace_back(argv[i]);
+    }
+    std::string outputFileName = argv[argc - 1];
+    return processEvents(inputFiles, outputFileName, otherSample, calculateAppearance);
 }
