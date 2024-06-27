@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<param_list name="3fosc_physics_parameter_values">
+  <!--
+    EXPLANATION: This file specifies values for physics parameters which are read when
+    populating the fit parameter list. Note that the values and ranges specified here
+    do NOT specify the priors, as priors are specified in config files of a different
+    format (see config/priors/).
+    For a explanation of what each node is, see Parameter.h
+  -->
+
+  <!--
+     NOTE: The values specified for any physics parameters in this file must correspond to these schemes,
+     which must also match the schemes set in Opt::Instance()
+
+     This is used in the definition of the mass hierarchy so no modifications are needed in the sterile case
+  -->
+  <schemes>
+    <mixing> sinsqtheta </mixing>
+    <phase>  delta      </phase>
+    <Dmsq>   abs23      </Dmsq>
+  </schemes>
+
+  <param>
+    <name>
+      <simple> dm12sq </simple>
+    </name>
+    <type> special </type>
+    <limits> 7.4e-5, 7.6e-5 </limits>
+    <range_mode> value </range_mode>
+    <range> 7.4e-5, 7.6e-5 </range>
+    <step_mode> value </step_mode>
+    <step> 2e-06 </step>
+    <init> 7.4e-5 </init>
+  </param>
+
+  <param>
+    <name>
+      <simple> dm23sq </simple>
+    </name>
+    <type> special </type>
+    <limits> 2.4e-3, 2.5e-3 </limits>
+    <range_mode> value </range_mode>
+    <range> 2.4e-3, 2.5e-3 </range>
+    <step_mode> value </step_mode>
+    <step> 0.0001 </step>
+    <init> 2.4e-3 </init>
+  </param>
+
+  <param>
+    <name>
+      <simple> mixing12 </simple>
+    </name>
+    <type> special </type>
+    <limits> 0.29, 0.31 </limits>
+    <range_mode> value </range_mode>
+    <range> 0.29, 0.31 </range>
+    <step_mode> value </step_mode>
+    <step> 0.01 </step>
+    <init> 0.29 </init>
+  </param>
+
+  <param>
+    <name>
+      <simple> mixing13 </simple>
+    </name>
+    <type> special </type>
+    <limits> 0.021, 0.023 </limits>
+    <range_mode> value </range_mode>
+    <range> 0.021, 0.023 </range>
+    <step_mode> value </step_mode>
+    <step> 0.001 </step>
+    <init> 0.021 </init>
+  </param>
+
+  <param>
+    <name>
+      <simple> mixing23 </simple>
+    </name>
+    <type> special </type>
+    <limits> 0.49, 0.51 </limits>
+    <range_mode> value </range_mode>
+    <range> 0.49, 0.51 </range>
+    <step_mode> value </step_mode>
+    <step> 0.005 </step>
+    <init> 0.49 </init>
+  </param>
+
+  <param>
+    <name>
+      <simple> cpv </simple>
+    </name>
+    <type> special </type>
+    <limits> -3.1416, 3.1416 </limits>
+    <range_mode> value </range_mode>
+    <range> -3.1416, 3.1416 </range>
+    <step_mode> value </step_mode>
+    <step> 0.01 </step>
+    <init> -0.1 </init>
+  </param>
+
+</param_list>

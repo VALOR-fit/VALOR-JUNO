@@ -6,14 +6,14 @@
   <data>
     <exposure>
       <juno_atmo>
-      -999
+      10E14
       </juno_atmo>
     </exposure>
   </data>
 
 
 <fiducial_mass>
-  -1 <!-- simulated mass was 1.13kt. Desired mass is 40kt -->
+  20 <!-- simulated mass was 1.13kt. Desired mass is 40kt -->
 </fiducial_mass>
 
 <!--
@@ -29,7 +29,7 @@ Input MC templates
 
   <dst>
     <juno_atmo>
-      <filename> juno_test/juno_flux.root </filename>
+      <filename> juno_test/nuebarAtmofluxWOscDet.root </filename>
       <objname> juno_reco_dst </objname>
       <objtype> TTree </objtype>
     </juno_atmo>
@@ -37,7 +37,7 @@ Input MC templates
 
   <!-- in kg, for calculating CCinc xsec -->
   <interaction_mass>
-    -999
+    20000
   </interaction_mass>
 </mc>
 
