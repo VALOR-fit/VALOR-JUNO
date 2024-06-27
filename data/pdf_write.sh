@@ -1,0 +1,11 @@
+valor-write_pdf \
+  --config /sps/juno/ycao/VALOR/softw/JUNO/vmaster/config/analysis/juno_test_analysis_2024.xml \
+  --write-opt all+SB \
+  --physics-hypothesis 3f_osc\
+  --input-mixing12 0.3 \
+  --input-mixing13 0.022 \
+  --input-mixing23 0.5 \
+  --input-cpv 0.1 \
+  --input-dm12sq 7.5e-5 \
+  --input-dm23sq 2.45e-3 \
+  --output-name osc_test
