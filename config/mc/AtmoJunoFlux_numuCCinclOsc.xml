@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 
-<analysis_inputs analysis="JUNO" version="2024">
+<analysis_inputs analysis="JUNO_Atmo_Fit" version="2024" detector="Atmo_JUNO">
 
 
-  <data>
-    <exposure>
-      <juno_atmo>
-      10E14
-      </juno_atmo>
-    </exposure>
-  </data>
+<data>
+  <exposure>
+    <atmo_numu>
+      10
+    </atmo_numu>
+  </exposure>
+</data>
 
 
 <fiducial_mass>
@@ -28,11 +28,11 @@ Input MC templates
   </using_dst_format>
 
   <dst>
-    <juno_atmo>
+    <atmo_numu>
       <filename> juno_test/numuAtmofluxWOscDet.root </filename>
       <objname> juno_reco_dst </objname>
       <objtype> TTree </objtype>
-    </juno_atmo>
+    </atmo_numu>
   </dst>
 
   <!-- in kg, for calculating CCinc xsec -->

@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 
-<analysis_inputs analysis="JUNO" version="2024">
+<analysis_inputs analysis="JUNO_Atmo_Fit" version="2024" detector="Atmo_JUNO">
 
 
-  <data>
-    <exposure>
-      <juno_atmo>
-      10E14
-      </juno_atmo>
-    </exposure>
-  </data>
+<data>
+  <exposure>
+    <atmo_nue>
+      10
+    </atmo_nue>
+  </exposure>
+</data>
 
 
 <fiducial_mass>
@@ -28,11 +28,11 @@ Input MC templates
   </using_dst_format>
 
   <dst>
-    <juno_atmo>
-      <filename> juno_test/nuebarAtmofluxWOscDet.root </filename>
+    <atmo_nue>
+      <filename> juno_test/nueAtmofluxWOscDet.root </filename>
       <objname> juno_reco_dst </objname>
       <objtype> TTree </objtype>
-    </juno_atmo>
+    </atmo_nue>
   </dst>
 
   <!-- in kg, for calculating CCinc xsec -->
@@ -48,7 +48,7 @@ Modelists
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -->
 <modelist> modelists/fine/JUNO_OscLowE.xml </modelist>
-<coarse_modelist> modelists/coarse/coarse_mode_list_JUNO_numuCCincl.xml </coarse_modelist>
+<coarse_modelist> modelists/coarse/coarse_mode_list_JUNO_nueCCincl.xml </coarse_modelist>
 
 <!--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

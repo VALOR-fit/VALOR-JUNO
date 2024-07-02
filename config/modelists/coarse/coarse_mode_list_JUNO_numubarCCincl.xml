@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<coarse_mode_list name="JUNO_nueCCincl">
+  <coarse_mode>
+    <name>       nueCCQE  </name>
+    <line_col>   1         </line_col>
+    <fill_col>   101       </fill_col>
+    <fill_sty>   4002      </fill_sty>
+  </coarse_mode>
+  
+  <coarse_mode>
+    <name>       nueCCMEC  </name>
+    <line_col>   1          </line_col>
+    <fill_col>   102        </fill_col>
+    <fill_sty>   4003       </fill_sty>
+  </coarse_mode>
+  
+  <coarse_mode>
+    <name>       nueCC1pi   </name>
+    <line_col>   1          </line_col>
+    <fill_col>   103        </fill_col>
+    <fill_sty>   4145       </fill_sty>
+  </coarse_mode>
+  
+  <coarse_mode>
+    <name>       nueCC2pi   </name>
+    <line_col>   1          </line_col>
+    <fill_col>   104        </fill_col>
+    <fill_sty>   4154       </fill_sty>
+  </coarse_mode>
+
+  <coarse_mode>
+    <name>       nueCCoth  </name>
+    <line_col>   1          </line_col>
+    <fill_col>   105        </fill_col>
+    <fill_sty>   4144       </fill_sty>
+  </coarse_mode>
+  
+  <coarse_mode>
+    <name>       numuCC  </name>
+    <line_col>   1          </line_col>
+    <fill_col>   106        </fill_col>
+    <fill_sty>   4302       </fill_sty>
+  </coarse_mode>
+  
+  <coarse_mode>
+    <name>       nuenuebarCC  </name>
+    <line_col>   1            </line_col>
+    <fill_col>   107          </fill_col>
+    <fill_sty>   4018         </fill_sty>
+  </coarse_mode>
+  
+  <!--  <coarse_mode>
+    <name>       NC0pi    </name>
+    <line_col>   1     </line_col>
+    <fill_col>   879   </fill_col>
+    <fill_sty>   3017  </fill_sty>
+  </coarse_mode>-->
+  
+  <coarse_mode>
+    <name>       NCoth </name>
+    <line_col>   1     </line_col>
+    <fill_col>   108   </fill_col>
+    <fill_sty>   4018  </fill_sty>
+  </coarse_mode>
+  
+</coarse_mode_list>

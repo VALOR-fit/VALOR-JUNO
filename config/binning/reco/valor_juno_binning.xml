@@ -12,9 +12,9 @@
 
   <Ereco_binning>
     <bin_size> variable </bin_size>
-    <nbins>      9   </nbins>
+    <nbins>      10   </nbins>
     <bin_edges>
-      0.0, 0.6, 0.8, 1.0, 1.35, 1.75, 2.2, 3.0, 4.6, 20.0
+      0.0, 0.6, 0.8, 1.0, 1.35, 1.75, 2.2, 3.0, 4.6, 20.0, 60.0
     </bin_edges>
   </Ereco_binning>
 

@@ -11,7 +11,7 @@
   <priority msgstream="Messenger">    NOTICE   </priority>
   <priority msgstream="Rnd">          NOTICE   </priority>
   <priority msgstream="Reg">          NOTICE   </priority>
-  <priority msgstream="XML">          NOTICE   </priority>
+  <priority msgstream="XML">          DEBUG    </priority>
   <priority msgstream="SDData">       NOTICE   </priority>
   <priority msgstream="SDModel">      NOTICE   </priority>
   <priority msgstream="ArrIdx">       FATAL    </priority>
@@ -24,14 +24,14 @@
   
   <priority msgstream="Minuit">                         NOTICE </priority>
   <priority msgstream="Minuit2">                          INFO </priority>
-  <priority msgstream="CompoundFitElements">            NOTICE </priority>
-  <priority msgstream="CompoundFitModel">               NOTICE </priority>
-  <priority msgstream="CompoundFitData">                NOTICE </priority>
+  <priority msgstream="CompoundFitElements">             DEBUG </priority>
+  <priority msgstream="CompoundFitModel">                 INFO </priority>
+  <priority msgstream="CompoundFitData">                  INFO </priority>
   <priority msgstream="CorrelatedSystematics">          NOTICE </priority>
   <priority msgstream="CompoundCorrelatedSystematics">  NOTICE </priority>
   <priority msgstream="GenericSingleSampleFitModel">    NOTICE </priority>
-  <priority msgstream="GenericSingleSampleFitData">     NOTICE </priority>
-  <priority msgstream="FitInputs">                      NOTICE </priority>
+  <priority msgstream="GenericSingleSampleFitData">       INFO </priority>
+  <priority msgstream="FitInputs">                       DEBUG </priority>
   <priority msgstream="UtlNumStat">                     NOTICE </priority>
   <priority msgstream="Lateral">                        NOTICE </priority>
 
@@ -51,7 +51,7 @@
   <priority msgstream="universe_variation_tweaks">      NOTICE </priority>
   <priority msgstream="make_sbncode_minidst">           NOTICE </priority>
   <priority msgstream="Marginalisation">                NOTICE </priority>
-  <priority msgstream="UtlOscillation">                 NOTICE </priority>
+  <priority msgstream="UtlOscillation">                 DEBUG  </priority>
   <priority msgstream="Interpolator">                   WARN   </priority>
   <priority msgstream="ToyStream">                      NOTICE </priority>
   <priority msgstream="ToyBuilder">                     NOTICE </priority>
