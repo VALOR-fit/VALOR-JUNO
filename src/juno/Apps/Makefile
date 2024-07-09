@@ -14,17 +14,18 @@ include $(VALOR_EXPT)/make/Make.include
 
 JUNO_LIBRARIES =
 
-TGT = make_valortree \
-      make_response   
+TGT = make_dst \
+      make_response  \
+      make_modehist 
 
 all: $(TGT)
 
 # Generate DSTs for JUNOCode fit
-make_valortree: FORCE
+make_dst: FORCE
 ifeq ($(JUNOANALYSIS_ENABLED),0)
 ifdef GENIE
-	$(CXX) $(CXXFLAGS) -c make_valortree.cxx $(GINCLUDES)
-	$(LD) $(LDFLAGS) make_valortree.o $(GLIBRARIES) $(VALOR_GLIBRARIES) -o $(VALOR_EXPT)/bin/valor-make_valortree
+	$(CXX) $(CXXFLAGS) -c make_dst.cxx $(GINCLUDES)
+	$(LD) $(LDFLAGS) make_dst.o $(GLIBRARIES) $(VALOR_GLIBRARIES) -o $(VALOR_EXPT)/bin/valor-juno_make_dst
 else
 	@echo "Skipping make_valortree due to no GENIE"
 endif
@@ -43,6 +44,19 @@ else
 endif
 else
 	@echo "Skipping make_response due to no JUNOanalysis"
+endif
+
+# Generate DSTs for JUNOCode fit
+make_modehist: FORCE
+ifeq ($(JUNOANALYSIS_ENABLED),0)
+ifdef GENIE
+	$(CXX) $(CXXFLAGS) -c make_mode.cxx $(GINCLUDES)
+	$(LD) $(LDFLAGS) make_mode.o $(GLIBRARIES) $(VALOR_GLIBRARIES) -o $(VALOR_EXPT)/bin/valor-make_mode
+else
+	@echo "Skipping make_valortree due to no GENIE"
+endif
+else
+	@echo "Skipping make_valortree due to no JUNOanalysis"
 endif
 
 # Transform the data from GENIE to valor
