@@ -5,9 +5,9 @@
 
 <data>
   <exposure>
-    <atmo_nuebar>
+    <atmo_jiangmen>
       10
-    </atmo_nuebar>
+    </atmo_jiangmen>
   </exposure>
 </data>
 
@@ -28,11 +28,11 @@ Input MC templates
   </using_dst_format>
 
   <dst>
-    <atmo_nuebar>
+    <atmo_jiangmen>
       <filename> juno_test/nuebarAtmofluxWoOscDet.root </filename>
       <objname> juno_reco_dst </objname>
       <objtype> TTree </objtype>
-    </atmo_nuebar>
+    </atmo_jiangmen>
   </dst>
 
   <!-- in kg, for calculating CCinc xsec -->

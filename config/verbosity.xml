@@ -11,7 +11,7 @@
   <priority msgstream="Messenger">    NOTICE   </priority>
   <priority msgstream="Rnd">          NOTICE   </priority>
   <priority msgstream="Reg">          NOTICE   </priority>
-  <priority msgstream="XML">          DEBUG    </priority>
+  <priority msgstream="XML">          NOTICE   </priority>
   <priority msgstream="SDData">       NOTICE   </priority>
   <priority msgstream="SDModel">      NOTICE   </priority>
   <priority msgstream="ArrIdx">       FATAL    </priority>
@@ -31,7 +31,7 @@
   <priority msgstream="CompoundCorrelatedSystematics">  NOTICE </priority>
   <priority msgstream="GenericSingleSampleFitModel">    NOTICE </priority>
   <priority msgstream="GenericSingleSampleFitData">       INFO </priority>
-  <priority msgstream="FitInputs">                       DEBUG </priority>
+  <priority msgstream="FitInputs">                      NOTICE </priority>
   <priority msgstream="UtlNumStat">                     NOTICE </priority>
   <priority msgstream="Lateral">                        NOTICE </priority>
 

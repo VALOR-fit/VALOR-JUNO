@@ -4,10 +4,10 @@
 
   <element_list name="juno_flux_2024">
    
-    <element name="Atmo_numu_Dis">
-      <detector>Atmo_JUNO</detector>
-      <beam>Atmo_NuMu</beam>
-      <sample>numuCCincl</sample>
+    <element name="Atmo_numuf_numuCC">
+      <detector>JUNO</detector>
+      <beam>Atmo_Jiangmen</beam>
+      <sample>JFC_numuCC</sample>
       <observable>Ereco</observable>
       <data></data>
       <mc>mc/AtmoJunoFlux_numuCCincl.xml</mc>
@@ -16,10 +16,10 @@
       <binning>binning/juno_proposal_binning_ereco.xml</binning>
     </element>
 
-    <element name="Atmo_nue_Dis">
-      <detector>Atmo_JUNO</detector>
-      <beam>Atmo_NuE</beam>
-      <sample>numuCCincl</sample>
+    <element name="Atmo_nuef_numuCC">
+      <detector>JUNO</detector>
+      <beam>Atmo_Jiangmen</beam>
+      <sample>JFC_nueCC</sample>
       <observable>Ereco</observable>
       <data></data>
       <mc>mc/AtmoJunoFlux_nueCCincl.xml</mc>
@@ -27,11 +27,23 @@
       <model_class>valor::GenericSingleSampleFitModel</model_class>
       <binning>binning/juno_proposal_binning_ereco.xml</binning>
     </element>
-  
-    <element name="Atmo_numubar_Dis">
-      <detector>Atmo_JUNO</detector>
-      <beam>Atmo_NuMuBar</beam>
-      <sample>numuCCincl</sample>
+
+    <element name="Atmo_nuebarf_numuCC">
+      <detector>JUNO</detector>
+      <beam>Atmo_Jiangmen</beam>
+      <sample>JFC_nuebarCC</sample>
+      <observable>Ereco</observable>
+      <data></data>
+      <mc>mc/AtmoJunoFlux_nuebarCCincl.xml</mc>
+      <data_class>valor::GenericSingleSampleFitData</data_class>
+      <model_class>valor::GenericSingleSampleFitModel</model_class>
+      <binning>binning/juno_proposal_binning_ereco.xml</binning>
+    </element>
+
+    <element name="Atmo_numubarf_numuCC">
+      <detector>JUNO</detector>
+      <beam>Atmo_Jiangmen</beam>
+      <sample>JFC_numubarCC</sample>
       <observable>Ereco</observable>
       <data></data>
       <mc>mc/AtmoJunoFlux_numubarCCincl.xml</mc>
@@ -39,42 +51,6 @@
       <model_class>valor::GenericSingleSampleFitModel</model_class>
       <binning>binning/juno_proposal_binning_ereco.xml</binning>
     </element>
-
-    <element name="Atmo_nuebar_Dis">
-      <detector>Atmo_JUNO</detector>
-      <beam>Atmo_NuEBar</beam>
-      <sample>numuCCincl</sample>
-      <observable>Ereco</observable>
-      <data></data>
-      <mc>mc/AtmoJunoFlux_nuebarCCincl.xml</mc>
-      <data_class>valor::GenericSingleSampleFitData</data_class>
-      <model_class>valor::GenericSingleSampleFitModel</model_class>
-      <binning>binning/juno_proposal_binning_ereco.xml</binning>
-    </element> 
-
-    <!--element name="Atmo_nue_App">
-      <detector>Atmo_JUNO</detector>
-      <beam>JUNO_Atmo</beam>
-      <sample>nueCCincl</sample>
-      <observable>Ereco</observable>
-      <data></data>
-      <mc>mc/AtmoJunoFlux_nueCCinclOsc.xml</mc>
-      <data_class>valor::GenericSingleSampleFitData</data_class>
-      <model_class>valor::GenericSingleSampleFitModel</model_class>
-      <binning>binning/juno_proposal_binning_ereco.xml</binning>
-    </element-->
-
-    <!--element name="Atmo_nuebar_App">
-      <detector>Atmo_JUNO</detector>
-      <beam>JUNO_Atmo</beam>
-      <sample>nuebarCChigh</sample>
-      <observable>Ereco</observable>
-      <data></data>
-      <mc>mc/AtmoJunoFlux_nuebarCCinclOsc.xml</mc>
-      <data_class>valor::GenericSingleSampleFitData</data_class>
-      <model_class>valor::GenericSingleSampleFitModel</model_class>
-      <binning>binning/juno_proposal_binning_ereco.xml</binning>
-    </element--> 
 
   </element_list>
 
