@@ -68,7 +68,7 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
 
     // Set branch addresses
     ghep_tree.SetBranchAddress("enu_true", &E_true);
-    ghep_tree.SetBranchAddress("nu_PDG", &nu_pdg);
+    ghep_tree.SetBranchAddress("nu_pdg", &nu_pdg);
     ghep_tree.SetBranchAddress("costh_true", &costh_true);
     ghep_tree.SetBranchAddress("Q2", &Q2);
     ghep_tree.SetBranchAddress("W", &W);
@@ -103,7 +103,7 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     outputTree.Branch("nPionm", &npim);
     outputTree.Branch("nPion0", &npi0);
     outputTree.Branch("reac_mode", &reac_mod);
-    outputTree.Branch("nu_PDG", &nu_pdg);
+    outputTree.Branch("nu_pdg", &nu_pdg);
     outputTree.Branch("event_id", &event_id);
     outputTree.Branch("wght", &wght);
     outputTree.Branch("sample", &sample_branch);

@@ -95,7 +95,7 @@ valor::conv::Sample_t InferSampleType(int npi, int npi0, bool is_nue, bool is_an
 
 int processEvents(const std::vector<std::string>& inputFiles, const std::string& outputFileName) {
     TChain* ghep_tree = new TChain("gtree");
-    static const int gPrintEveryNEvents = 50000;
+    static const int gPrintEveryNEvents = 200000;
     ghep_tree->SetMaxVirtualSize(-1);
     for (const auto& file : inputFiles) {
         ghep_tree->Add(file.c_str());
@@ -123,7 +123,7 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     outputTree->Branch("nPion0", &npi0);
     outputTree->Branch("reac_mode_wo_PID", &reac_mod_wo_PID);
     outputTree->Branch("reac_mode", &reac_mod);
-    outputTree->Branch("nu_PDG", &nu_pdg);
+    outputTree->Branch("nu_pdg", &nu_pdg);
     outputTree->Branch("event_id", &event_id);
     outputTree->Branch("wght", &wght);
     outputTree->Branch("sample", &sample_branch);
@@ -183,10 +183,10 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
                 iscc = 0; 
             }
             switch(nu_pdg){
-                case 12: beam = valor::conv::kbAtmo_JUNONuE;
-                case -12: beam = valor::conv::kbAtmo_JUNONuEBar;
-                case 14: beam = valor::conv::kbAtmo_JUNONuMu;
-                case -14: beam = valor::conv::kbAtmo_JUNONuMuBar;
+                case 12: beam = valor::conv::kbAtmo_Jiangmen;
+                case -12: beam = valor::conv::kbAtmo_Jiangmen;
+                case 14: beam = valor::conv::kbAtmo_Jiangmen;
+                case -14: beam = valor::conv::kbAtmo_Jiangmen;
             }
 
             TIter iter(event.MakeIterator());
