@@ -4,6 +4,13 @@
 #include <sstream>
 #include <map>
 #include <utility>
+#include <fstream>
+#include <cstdlib>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
+#include <TColor.h>
+
 #include <ROOT/RDF/RInterface.hxx>
 #include <ROOT/RDFHelpers.hxx>
 #include <ROOT/RDataFrame.hxx>
@@ -51,6 +58,40 @@ using std::string;
 using namespace genie;
 using namespace valor;
 
+struct NormEntry {
+    double energyLow;
+    double costhLow;
+    double numu;
+    double numubar;
+    double nue;
+    double nuebar;
+    double nc;
+};
+
+std::vector<NormEntry> gNormTable;
+
+// Function to read normalization table from txt file
+bool readNormTable(const std::string& filename) {
+    std::ifstream infile(filename);
+    if (!infile) {
+        std::cerr << "Error opening normalization file: " << filename << std::endl;
+        return false;
+    }
+    std::string line;
+    while (std::getline(infile, line)) {
+        if (line.empty()) continue;
+        // Skip header or comment lines
+        if (line[0] == '#' || line.find("----") != std::string::npos) continue;
+        std::istringstream iss(line);
+        NormEntry entry;
+        if (!(iss >> entry.energyLow >> entry.costhLow >> entry.numu >> entry.numubar >> entry.nue >> entry.nuebar >> entry.nc)) {
+            continue;
+        }
+        gNormTable.push_back(entry);
+    }
+    return true;
+}
+
 std::string SampleTypeToString(valor::conv::Sample_t sample) {
     switch (sample) {
         case valor::conv::ksNuMuCC: return "numuCC";
@@ -73,7 +114,7 @@ std::string SampleTypeToString(valor::conv::Sample_t sample) {
 valor::conv::Sample_t InferSampleType(int npi, int npi0, bool is_nue, bool is_antineutrino) {
     if (is_nue) {
         if (is_antineutrino) {
-            return valor::conv::ksNuEBarCChigh; // Assuming high resolution, adjust as necessary
+            return valor::conv::ksNuEBarCChigh; 
         } else {
             if (npi == 0 && npi0 == 0) return valor::conv::ksNuECC;
             if (npi == 1 && npi0 == 0) return valor::conv::ksNuECC1piC;
@@ -82,7 +123,7 @@ valor::conv::Sample_t InferSampleType(int npi, int npi0, bool is_nue, bool is_an
         }
     } else {
         if (is_antineutrino) {
-            return valor::conv::ksNuMuBarCChigh; // Assuming high resolution, adjust as necessary
+            return valor::conv::ksNuMuBarCChigh; 
         } else {
             if (npi == 0 && npi0 == 0) return valor::conv::ksNuMuCC;
             if (npi == 1 && npi0 == 0) return valor::conv::ksNuMuCC1piC;
@@ -100,15 +141,40 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     for (const auto& file : inputFiles) {
         ghep_tree->Add(file.c_str());
     }
-
-    genie::NtpMCEventRecord *mcrec = nullptr;
+    genie::NtpMCEventRecord* mcrec = nullptr;
     ghep_tree->SetBranchAddress("gmcrec", &mcrec);
+    Long64_t nentries = ghep_tree->GetEntries();
+
+    std::vector<int> binCounts(gNormTable.size(), 0);
+    for (Long64_t i = 0; i < nentries; ++i) {
+        ghep_tree->GetEntry(i);
+        if (mcrec && mcrec->event) {
+            const TLorentzVector& nuP4 = *(mcrec->event->Probe()->P4());
+            double E_true_tmp = nuP4.Energy();
+            double costh_true_tmp = -nuP4.Pz() / E_true_tmp;
+            int binIndex = -1;
+            double bestEnergy = -1;
+            double bestCosth = -100;
+            for (size_t j = 0; j < gNormTable.size(); ++j) {
+                const NormEntry& entry = gNormTable[j];
+                if (E_true_tmp >= entry.energyLow && costh_true_tmp >= entry.costhLow) {
+                    if (entry.energyLow > bestEnergy || (entry.energyLow == bestEnergy && entry.costhLow > bestCosth)) {
+                        bestEnergy = entry.energyLow;
+                        bestCosth = entry.costhLow;
+                        binIndex = j;
+                    }
+                }
+            }
+            if (binIndex != -1) {
+                binCounts[binIndex]++;
+            }
+        }
+    }
 
     TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE");
     TTree* outputTree = new TTree("juno_true_tree", "Processed Data");
-
     double Q2, W, E_true, costh_true, costh_reco, wght, LoE_true;
-    int isnc = 0, iscc = 0, nkaon = 0, npip = 0, npim = 0, npi0 = 0,reac_mod_wo_PID = -1, reac_mod = -1, nu_pdg = -1, event_id = 0, sample_branch = -1, beam = -1;
+    int isnc = 0, iscc = 0, nkaon = 0, npip = 0, npim = 0, npi0 = 0, reac_mod_wo_PID = -1, reac_mod = -1, nu_pdg = -1, event_id = 0, sample_branch = -1, beam = -1;
     outputTree->Branch("Q2", &Q2);
     outputTree->Branch("W", &W);
     outputTree->Branch("enu_true", &E_true);
@@ -128,165 +194,94 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     outputTree->Branch("wght", &wght);
     outputTree->Branch("sample", &sample_branch);
     outputTree->Branch("beam", &beam);
-    
-    // Confusion matrix for efficiency
-    double efficiencyMatrix[5][5] = {
-        {0.53, 0.29, 0.04, 0.13, 0.01},
-        {0.08, 0.71, 0.15, 0.07, 0.00},
-        {0.08, 0.38, 0.54, 0.01, 0.00},
-        {0.06, 0.07, 0.00, 0.74, 0.13},
-        {0.06, 0.03, 0.00, 0.34, 0.57}
-    };
-
-    int confusionMatrix[5][5] = {0};
-
-    TRandom3 randGen;
-
-
-    auto flavorToIndex = [](int nu_pdg) {
-        switch (nu_pdg) {
-            case 12:  return 1; // nue
-            case -12: return 2; // nuebar
-            case 14:  return 3; // numu
-            case -14: return 4; // numubar
-            default:  return 0;  // nc
-        }
-    };
-
-
-    Long64_t nentries = ghep_tree->GetEntries();
-
-    
 
     int savedEvents = 0;
+    TRandom3 randGen;
     for (Long64_t i = 0; i < nentries; ++i) {
         ghep_tree->GetEntry(i);
         if (gPrintEveryNEvents && !(i % gPrintEveryNEvents)) {
             VLOG("valor_juno", pNOTICE) << "** Reading event: " << i;
         }
-
         if (mcrec && mcrec->event) {
-            const genie::EventRecord& event = *(mcrec->event);
-            const TLorentzVector& nuP4 = *(event.Probe()->P4());
-            const genie::Interaction* interaction = event.Summary();
-            const genie::GHepParticle* neutrino = event.Probe();
-            iscc = 0; isnc = 0; npip = 0; npim = 0; npi0 = 0; nkaon = 0; reac_mod = 0; event_id = 0; reac_mod_wo_PID = 0;
-
-            if (neutrino != nullptr) {
-                nu_pdg = neutrino->Pdg();
-            }
-            if (interaction->ProcInfo().IsWeakCC()) {
-                iscc = 1;
-                isnc = 0; 
-            } else if (interaction->ProcInfo().IsWeakNC()) {
-                isnc = 1;
-                iscc = 0; 
-            }
-            switch(nu_pdg){
-                case 12: beam = valor::conv::kbAtmo_Jiangmen;
-                case -12: beam = valor::conv::kbAtmo_Jiangmen;
-                case 14: beam = valor::conv::kbAtmo_Jiangmen;
-                case -14: beam = valor::conv::kbAtmo_Jiangmen;
-            }
-
-            TIter iter(event.MakeIterator());
-            genie::GHepParticle* p = nullptr;
-            while ((p = dynamic_cast<genie::GHepParticle*>(iter.Next()))) {
-                if (p->Status() == genie::kIStStableFinalState) {
-                    int pdg = p->Pdg();
-                    if (pdg == genie::kPdgPiP) npip++;
-                    else if (pdg == genie::kPdgPiM) npim++;
-                    else if (pdg == genie::kPdgPi0) npi0++;
-                    if (pdg == genie::kPdgKP || pdg == genie::kPdgKM || pdg == genie::kPdgK0 || pdg == genie::kPdgAntiK0) {
-                        nkaon++;
+            const TLorentzVector& nuP4 = *(mcrec->event->Probe()->P4());
+            E_true = nuP4.Energy();
+            costh_true = -nuP4.Pz() / E_true;
+            int binIndex = -1;
+            double bestEnergy = -1;
+            double bestCosth = -100;
+            for (size_t j = 0; j < gNormTable.size(); ++j) {
+                const NormEntry& entry = gNormTable[j];
+                if (E_true >= entry.energyLow && costh_true >= entry.costhLow) {
+                    if (entry.energyLow > bestEnergy || (entry.energyLow == bestEnergy && entry.costhLow > bestCosth)) {
+                        bestEnergy = entry.energyLow;
+                        bestCosth = entry.costhLow;
+                        binIndex = j;
                     }
                 }
             }
-
-            valor::conv::ReacMode_t reac_mode = valor::util::DetermineReactionMode(&event, false);
-            reac_mod_wo_PID = reac_mode;
-
-            // Determine final flavor using efficiency matrix
-            int initialIndex = flavorToIndex(nu_pdg);
-            double randomValue = randGen.Uniform();
-            double cumulativeProbability = 0.0;
-            int finalIndex = 0; // Default to nc
-
-            for (int j = 0; j < 5; ++j) {
-                cumulativeProbability += efficiencyMatrix[initialIndex][j];
-                if (randomValue < cumulativeProbability) {
-                    finalIndex = j;
-                    break;
+            double desiredCount = 0.0;
+            if (binIndex != -1) {
+                const NormEntry& bestEntry = gNormTable[binIndex];
+                const genie::GHepParticle* neutrino = mcrec->event->Probe();
+                if (neutrino != nullptr) {
+                    nu_pdg = neutrino->Pdg();
+                }
+                const genie::Interaction* interaction = mcrec->event->Summary();
+                if (interaction->ProcInfo().IsWeakCC()) {
+                    iscc = 1; isnc = 0;
+                } else if (interaction->ProcInfo().IsWeakNC()) {
+                    iscc = 0; isnc = 1;
+                }
+                if (isnc == 1) {
+                    desiredCount = bestEntry.nc;
+                } else if (std::abs(nu_pdg) == 12) {
+                    desiredCount = (nu_pdg > 0) ? bestEntry.nue : bestEntry.nuebar;
+                } else if (std::abs(nu_pdg) == 14) {
+                    desiredCount = (nu_pdg > 0) ? bestEntry.numu : bestEntry.numubar;
                 }
             }
-
-            // Map matrix index back to PDG code
-            switch (finalIndex) {
-                case 1: nu_pdg = 12; break;
-                case 2: nu_pdg = -12; break;
-                case 3: nu_pdg = 14; break;
-                case 4: nu_pdg = -14; break;
-                default: nu_pdg = 0; break;
+            double p = 1.0;
+            if (binIndex != -1 && binCounts[binIndex] > 0) {
+                p = desiredCount / binCounts[binIndex];
+                if (p > 1.0) p = 1.0;
             }
-
-            // Update confusion matrix
-            confusionMatrix[initialIndex][finalIndex]++;
-
-            // If a CC event is misidentified as an NC event
-            if (iscc == 1 && finalIndex == 0) {
-                iscc = 0;
-                isnc = 1;
+            if (randGen.Uniform() < p) {
+                double E_reco = E_true;
+                costh_reco = costh_true;
+                LoE_true = 12742 / E_true;
+                Q2 = mcrec->event->Summary()->Kine().Q2(true);
+                W = mcrec->event->Summary()->Kine().W(true);
+                bool is_nue = (std::abs(nu_pdg) == 12);
+                bool is_antineutrino = (nu_pdg < 0);
+                valor::conv::Sample_t sample = InferSampleType(npip + npim, npi0, is_nue, is_antineutrino);
+                sample_branch = sample;
+                beam = valor::conv::kbAtmo_Jiangmen;
+                outputTree->Fill();
+                savedEvents++;
             }
-            valor::conv::ReacMode_t reac_mode_PID = valor::util::DetermineReactionModeRead(nu_pdg, iscc, isnc,&event, false);
-            reac_mod = reac_mode_PID;
-
-            E_true = nuP4.Energy();
-            LoE_true = 12742 / E_true; // L in km
-            VLOG("valor_juno", pDEBUG) << "Read event: "
-                                       << "Etrue = " << E_true << " GeV; ";
-
-            costh_true = -nuP4.Pz() / E_true;
-            Q2 = mcrec->event->Summary()->Kine().Q2(true);
-            W = mcrec->event->Summary()->Kine().W(true);
-
-            bool is_nue = (nu_pdg == 12 || nu_pdg == -12);
-            bool is_antineutrino = (nu_pdg < 0);
-            valor::conv::Sample_t sample = InferSampleType(npip + npim, npi0, is_nue, is_antineutrino);
-            sample_branch = sample;
-
-            wght = 1.0;
-            outputTree->Fill();
-            savedEvents++;
         }
     }
 
     outputTree->Write();
     outputFile->Close();
-
     delete ghep_tree;
     delete outputFile;
-
-    std::cout << "Confusion Matrix:\n";
-    for (int i = 0; i < 5; ++i) {
-        for (int j = 0; j < 5; ++j) {
-            std::cout << confusionMatrix[i][j] << " ";
-        }
-        std::cout << "\n";
-    }
     VLOG("valor_juno", pNOTICE) << "Done!";
-    std::cout << "Total saved events: " << savedEvents << std::endl; 
-
+    std::cout << "Total saved events: " << savedEvents << std::endl;
     return 0;
 }
 
+
 int main(int argc, char** argv) {
-    if (argc < 3) {
-        std::cout << "Usage: " << argv[0] << "<input files> <output file name>" << std::endl;
+    if (argc < 4) {
+        std::cout << "Usage: " << argv[0] << " <normalization txt file> <input files> <output file name>" << std::endl;
         return 1;
     }
-
-    int inputStartIndex = 1;
-
+    std::string normFile = argv[1];
+    if (!readNormTable(normFile)) {
+        return 1;
+    }
+    int inputStartIndex = 2;
     std::vector<std::string> inputFiles;
     for (int i = inputStartIndex; i < argc - 1; ++i) {
         inputFiles.emplace_back(argv[i]);
@@ -294,6 +289,4 @@ int main(int argc, char** argv) {
     std::string outputFileName = argv[argc - 1];
     return processEvents(inputFiles, outputFileName);
 }
-
-
 
