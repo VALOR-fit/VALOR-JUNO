@@ -134,6 +134,9 @@ valor::conv::Sample_t InferSampleType(int npi, int npi0, bool is_nue, bool is_an
     }
 }
 
+#include <unordered_map>
+// ... (other includes)
+
 int processEvents(const std::vector<std::string>& inputFiles, const std::string& outputFileName) {
     TChain* ghep_tree = new TChain("gtree");
     static const int gPrintEveryNEvents = 200000;
@@ -174,7 +177,8 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE");
     TTree* outputTree = new TTree("juno_true_tree", "Processed Data");
     double Q2, W, E_true, costh_true, costh_reco, wght, LoE_true;
-    int isnc = 0, iscc = 0, nkaon = 0, npip = 0, npim = 0, npi0 = 0, reac_mod_wo_PID = -1, reac_mod = -1, nu_pdg = -1, event_id = 0, sample_branch = -1, beam = -1;
+    int isnc = 0, iscc = 0, nkaon = 0, npip = 0, npim = 0, npi0 = 0, reac_mod_wo_PID = -1;
+    int reac_mod = -1, nu_pdg = -1, event_id = 0, sample_branch = -1, beam = -1;
     outputTree->Branch("Q2", &Q2);
     outputTree->Branch("W", &W);
     outputTree->Branch("enu_true", &E_true);
@@ -194,6 +198,9 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     outputTree->Branch("wght", &wght);
     outputTree->Branch("sample", &sample_branch);
     outputTree->Branch("beam", &beam);
+
+    // Map to store counts for each reaction mode
+    std::unordered_map<int, int> modeCounts;
 
     int savedEvents = 0;
     TRandom3 randGen;
@@ -251,25 +258,56 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
                 LoE_true = 12742 / E_true;
                 Q2 = mcrec->event->Summary()->Kine().Q2(true);
                 W = mcrec->event->Summary()->Kine().W(true);
+                
+                // Apply the reaction mode determination:
+                const auto& event = *(mcrec->event);
+                valor::conv::ReacMode_t reac_mode = valor::util::DetermineReactionMode(&event, false);
+                reac_mod = reac_mode;
+                
+                // Update reaction mode count
+                modeCounts[reac_mod]++;
+                
                 bool is_nue = (std::abs(nu_pdg) == 12);
                 bool is_antineutrino = (nu_pdg < 0);
-                valor::conv::Sample_t sample = InferSampleType(npip + npim, npi0, is_nue, is_antineutrino);
-                sample_branch = sample;
+                if (isnc == 1) {
+                    sample_branch = valor::conv::ksJFCAtmoNC;       // JUNO Full contained Atmospheric NC (53)
+                } else if (std::abs(nu_pdg) == 12) {
+                    if (nu_pdg > 0)
+                        sample_branch = valor::conv::ksJFCAtmoNuECC;    // JUNO Full contained Atmo nue CC (51)
+                    else
+                        sample_branch = valor::conv::ksJFCAtmoNuEBarCC; // JUNO Full contained Atmo nuebar CC (52)
+                } else if (std::abs(nu_pdg) == 14) {
+                    if (nu_pdg > 0)
+                        sample_branch = valor::conv::ksJFCAtmoNuMuCC;   // JUNO Full contained Atmo numu CC (49)
+                    else
+                        sample_branch = valor::conv::ksJFCAtmoNuMuBarCC; // JUNO Full contained Atmo numubar CC (50)
+                } else {
+                    sample_branch = -1; 
+                }
                 beam = valor::conv::kbAtmo_Jiangmen;
+                wght = p;
                 outputTree->Fill();
                 savedEvents++;
             }
         }
     }
 
+    // Write out the tree and close the file
     outputTree->Write();
     outputFile->Close();
     delete ghep_tree;
     delete outputFile;
     VLOG("valor_juno", pNOTICE) << "Done!";
     std::cout << "Total saved events: " << savedEvents << std::endl;
+
+    // Output the event counts for each reaction mode
+    std::cout << "Reaction Mode Event Counts:" << std::endl;
+    for (const auto& kv : modeCounts) {
+        std::cout << "Mode " << kv.first << ": " << kv.second << " events." << std::endl;
+    }
     return 0;
 }
+
 
 
 int main(int argc, char** argv) {
