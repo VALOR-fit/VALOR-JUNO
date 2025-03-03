@@ -15,8 +15,8 @@ include $(VALOR_EXPT)/make/Make.include
 JUNO_LIBRARIES =
 
 TGT = make_dst \
-      make_response  \
-      make_modehist 
+      make_response \
+
 
 all: $(TGT)
 
