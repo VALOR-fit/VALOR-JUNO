@@ -29,8 +29,8 @@ Input MC templates
 
   <dst>
     <atmo_jiangmen>
-      <filename> juno_test/nueAtmofluxWoOscDet.root </filename>
-      <objname> juno_reco_dst </objname>
+      <filename> nue_wo_Osc.root </filename>
+      <objname> juno_true_dst </objname>
       <objtype> TTree </objtype>
     </atmo_jiangmen>
   </dst>

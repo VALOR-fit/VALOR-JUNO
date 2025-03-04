@@ -25,12 +25,12 @@
   <priority msgstream="Minuit">                         NOTICE </priority>
   <priority msgstream="Minuit2">                          INFO </priority>
   <priority msgstream="CompoundFitElements">             DEBUG </priority>
-  <priority msgstream="CompoundFitModel">                 INFO </priority>
-  <priority msgstream="CompoundFitData">                  INFO </priority>
+  <priority msgstream="CompoundFitModel">                DEBUG </priority>
+  <priority msgstream="CompoundFitData">                 DEBUG </priority>
   <priority msgstream="CorrelatedSystematics">          NOTICE </priority>
   <priority msgstream="CompoundCorrelatedSystematics">  NOTICE </priority>
-  <priority msgstream="GenericSingleSampleFitModel">    NOTICE </priority>
-  <priority msgstream="GenericSingleSampleFitData">       INFO </priority>
+  <priority msgstream="GenericSingleSampleFitModel">    DEBUG  </priority>
+  <priority msgstream="GenericSingleSampleFitData">      ERROR </priority>
   <priority msgstream="FitInputs">                      NOTICE </priority>
   <priority msgstream="UtlNumStat">                     NOTICE </priority>
   <priority msgstream="Lateral">                        NOTICE </priority>
