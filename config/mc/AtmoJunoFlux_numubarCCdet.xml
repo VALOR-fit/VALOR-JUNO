@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+
+<analysis_inputs analysis="JUNO_Atmo_Fit" version="2024" detector="Atmo_JUNO">
+
+
+<data>
+  <exposure>
+    <atmo_jiangmen>
+      10
+    </atmo_jiangmen>
+  </exposure>
+</data>
+
+
+<fiducial_mass>
+  20 <!-- simulated mass was 1.13kt. Desired mass is 40kt -->
+</fiducial_mass>
+
+<!--
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Input MC templates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+
+<mc>
+  <using_dst_format>
+    true
+  </using_dst_format>
+
+  <dst>
+    <atmo_jiangmen>
+      <filename> numubar_wo_Osc_det.root </filename>
+      <objname> juno_reco_dst </objname>
+      <objtype> TTree </objtype>
+    </atmo_jiangmen>
+  </dst>
+
+  <!-- in kg, for calculating CCinc xsec -->
+  <interaction_mass>
+    20000
+  </interaction_mass>
+</mc>
+
+
+<!--
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Modelists
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+<modelist> modelists/fine/JUNO_OscLowE.xml </modelist>
+<coarse_modelist> modelists/coarse/coarse_mode_list_JUNO_numubarCCincl.xml </coarse_modelist>
+
+<!--
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Default binning
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-->
+<default_binning> binning/juno_proposal_binning_ereco.xml  </default_binning>
+
+</analysis_inputs>

@@ -77,12 +77,12 @@
       <simple> mixing23 </simple>
     </name>
     <type> special </type>
-    <limits> 0.49, 0.56 </limits>
+    <limits> 0.4, 0.6 </limits>
     <range_mode> value </range_mode>
-    <range> 0.49, 0.56 </range>
+    <range> 0.4, 0.6 </range>
     <step_mode> value </step_mode>
     <step> 0.005 </step>
-    <init> 0.49 </init>
+    <init> 0.4 </init>
   </param>
 
   <param>

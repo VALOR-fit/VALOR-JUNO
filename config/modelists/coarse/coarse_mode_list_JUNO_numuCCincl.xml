@@ -43,6 +43,12 @@
   </coarse_mode>
   
 
+  <coarse_mode>
+    <name>       nueCC  </name>
+    <line_col>   1          </line_col>
+    <fill_col>   546        </fill_col>
+    <fill_sty>   3023       </fill_sty>
+  </coarse_mode>
 
   <coarse_mode>
     <name>       numubarCC  </name>
