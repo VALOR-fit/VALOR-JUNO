@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<param_list name="3fosc_physics_parameter_values">
+<param_list name="juno_flux_parameters">
   <!--
     EXPLANATION: This file specifies values for physics parameters which are read when
     populating the fit parameter list. Note that the values and ranges specified here
@@ -77,12 +77,12 @@
       <simple> mixing23 </simple>
     </name>
     <type> special </type>
-    <limits> 0.49, 0.56 </limits>
+    <limits> 0.4, 0.6 </limits>
     <range_mode> value </range_mode>
-    <range> 0.49, 0.56 </range>
+    <range> 0.4, 0.6 </range>
     <step_mode> value </step_mode>
     <step> 0.005 </step>
-    <init> 0.49 </init>
+    <init> 0.4 </init>
   </param>
 
   <param>

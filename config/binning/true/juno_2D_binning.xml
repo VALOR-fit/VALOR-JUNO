@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<binning>
+
+  <space>
+    Etrue,Thetatrue
+  </space>
+
+  <type>
+    edge-to-edge
+  </type>
+  
+  <Etrue_binning>
+    <bin_size> variable </bin_size>
+    <nbins>      10   </nbins>
+    <bin_edges>
+      0.0, 0.6, 0.8, 1.0, 1.35, 1.75, 2.2, 3.0, 4.6, 20.0, 60.0
+    </bin_edges>
+  </Etrue_binning>
+
+  <Thetatrue_binning>
+    <bin_size> variable </bin_size>
+    <nbins>      10   </nbins>
+    <bin_edges>
+      -1.0, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0
+    </bin_edges>
+  </Thetatrue_binning>
+
+
+
+  
+</binning>

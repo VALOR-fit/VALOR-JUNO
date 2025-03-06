@@ -1,0 +1,17 @@
+valor-run_fit \
+   --config /sps/juno/ycao/VALOR/softw/JUNO/vmaster/config/analysis/Atmo_Juno.xml \
+   --physics-hypothesis 3f_osc \
+   --param-values-option prefit-errors  \
+   --osc-prior-file priors/3Fosc_priors.xml \
+   --load-prior-from-file - \
+   --fitter minuit+with_simplex_fallback \
+   --mesg-thresholds verbosity.xml \
+   --tag juno_test \
+   --run 1 \
+   --ntoymc 10 \
+   --input-mixing12 0.3 \
+   --input-mixing13 0.022 \
+   --input-mixing23 0.4 \
+   --input-cpv 0.5 \
+   --input-dm12sq 7.5e-5 \
+   --input-dm23sq 2.45e-3 \
