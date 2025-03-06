@@ -296,7 +296,7 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     // Write out the tree and close the file
     outputTree->Write();
     outputFile->Close();
-    delete ghep_tree;
+    //delete ghep_tree;
     delete outputFile;
     VLOG("valor_juno", pNOTICE) << "Done!";
     std::cout << "Total saved events: " << savedEvents << std::endl;
