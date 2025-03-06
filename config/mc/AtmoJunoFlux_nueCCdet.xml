@@ -29,7 +29,7 @@ Input MC templates
 
   <dst>
     <atmo_jiangmen>
-      <filename> nue_wo_Osc_det.root </filename>
+      <filename> nue_IO_det.root </filename>
       <objname> juno_reco_dst </objname>
       <objtype> TTree </objtype>
     </atmo_jiangmen>

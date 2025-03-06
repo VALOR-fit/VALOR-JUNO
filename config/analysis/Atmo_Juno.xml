@@ -2,9 +2,9 @@
 
 <valor> 
 
-  <element_list name="Atmo_Juno_numu">
+  <element_list name="Atmo_Juno">
 
-    <element name="Atmo_numuCC">
+    <element name="Atmo_Juno_numuCC">
       <detector>     JUNO                                                 </detector>
       <beam>         Atmo_Jiangmen                                                    </beam>
       <sample>       JFC_numuCC                                              </sample>
@@ -14,8 +14,8 @@
       <model_class>  valor::GenericSingleSampleFitModel                         </model_class>
       <binning>      binning/juno_proposal_binning_ereco.xml                       </binning>
     </element>
-
-    <element name="Atmo_numubarCC">
+  
+    <element name="Atmo_Juno_numubarCC">
       <detector>     JUNO                                                 </detector>
       <beam>         Atmo_Jiangmen                                                    </beam>
       <sample>       JFC_numubarCC                                              </sample>
@@ -25,8 +25,8 @@
       <model_class>  valor::GenericSingleSampleFitModel                         </model_class>
       <binning>      binning/juno_proposal_binning_ereco.xml                       </binning>
     </element>
-    
-    <element name="Atmo_nueCC">
+
+    <element name="Atmo_Juno_nueCC">
       <detector>     JUNO                                                 </detector>
       <beam>         Atmo_Jiangmen                                                    </beam>
       <sample>       JFC_nueCC                                              </sample>
@@ -37,7 +37,7 @@
       <binning>      binning/juno_proposal_binning_ereco.xml                       </binning>
     </element>
 
-    <element name="Atmo_nuebarCC">
+    <element name="Atmo_Juno_nuebarCC">
       <detector>     JUNO                                                 </detector>
       <beam>         Atmo_Jiangmen                                                    </beam>
       <sample>       JFC_nuebarCC                                              </sample>
@@ -47,9 +47,8 @@
       <model_class>  valor::GenericSingleSampleFitModel                         </model_class>
       <binning>      binning/juno_proposal_binning_ereco.xml                       </binning>
     </element>
-  
   </element_list>
-  
+
   <parameter_definitions>
     <filename desc="juno_flux_parameters">       params/flux_3fosc.xml            </filename>
   </parameter_definitions>
