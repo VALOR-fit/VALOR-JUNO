@@ -1,0 +1,7 @@
+# argument                         |   type         |  require?   |   default
+# .....................................................................................................
+input-normalisation                |   string       |  mandatory  |   -
+input-directory                    |   string       |  mandatory  |   -
+output                             |   string       |  mandatory  |  valor_juno_dst.root
+sample                             |   string       |  mandatory  |  inclusiveCC
+mesg-thresholds                    |   string       |  optional   |  verbosity.xml
