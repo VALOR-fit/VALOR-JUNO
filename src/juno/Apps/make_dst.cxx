@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <filesystem>
 #include <sstream>
 #include <map>
 #include <utility>
@@ -11,9 +12,9 @@
 #include <thread>
 #include <TColor.h>
 
-#include <ROOT/RDF/RInterface.hxx>
-#include <ROOT/RDFHelpers.hxx>
-#include <ROOT/RDataFrame.hxx>
+//#include <ROOT/RDF/RInterface.hxx>
+//#include <ROOT/RDFHelpers.hxx>
+//#include <ROOT/RDataFrame.hxx>
 #include <TFile.h>
 #include <TChain.h>
 #include <TTree.h>
@@ -311,6 +312,7 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
 
 
 int main(int argc, char** argv) {
+  /*
     if (argc < 4) {
         std::cout << "Usage: " << argv[0] << " <normalization txt file> <input files> <output file name>" << std::endl;
         return 1;
@@ -326,5 +328,29 @@ int main(int argc, char** argv) {
     }
     std::string outputFileName = argv[argc - 1];
     return processEvents(inputFiles, outputFileName);
+  */
+
+  CmdLnArgList arg;
+  arg.Read(argc,argv, "$VALOR_EXPT/config/apps/make_dst.arg");
+  VLOG("valor_juno", pNOTICE) << arg;
+  
+  string arg_input_normalisation = arg.GetString("input-normalisation");
+  string arg_input_directory     = arg.GetString("input-directory");
+  string arg_output              = arg.GetString("output");
+  string arg_sample              = arg.GetString("sample");
+
+  std::string thresholds = util::CompleteConfigPath(arg.GetString("mesg-thresholds"));
+  valor::Messenger::Instance()->Configure(thresholds);
+
+  if (!readNormTable(arg_input_normalisation)) {
+    return 1;
+  }
+
+  std::vector<string> inputFiles;
+  for( const auto& entry : std::filesystem::directory_iterator(arg_input_directory) ) {
+    if( entry.path().extension() == ".root" ) inputFiles.emplace_back( entry.path() );
+  }
+
+  return processEvents(inputFiles, arg_output);
 }
 
