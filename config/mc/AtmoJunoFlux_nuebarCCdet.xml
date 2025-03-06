@@ -29,7 +29,7 @@ Input MC templates
 
   <dst>
     <atmo_jiangmen>
-      <filename> numu_wo_Osc_det.root </filename>
+      <filename> nuebar_wo_Osc_det.root </filename>
       <objname> juno_reco_dst </objname>
       <objtype> TTree </objtype>
     </atmo_jiangmen>
@@ -48,7 +48,7 @@ Modelists
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -->
 <modelist> modelists/fine/JUNO_OscLowE.xml </modelist>
-<coarse_modelist> modelists/coarse/coarse_mode_list_JUNO_numuCCincl.xml </coarse_modelist>
+<coarse_modelist> modelists/coarse/coarse_mode_list_JUNO_nuebarCCincl.xml </coarse_modelist>
 
 <!--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

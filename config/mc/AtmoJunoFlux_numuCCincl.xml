@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<analysis_inputs analysis="JUNO_Atmo_Fit" version="2024" detector="Atmo_JUNO">
+<analysis_inputs analysis="JUNO_Atmo_Fit" version="2024" detector="JUNO">
 
 
 <data>
@@ -29,8 +29,8 @@ Input MC templates
 
   <dst>
     <atmo_jiangmen>
-      <filename> juno_test/numuAtmofluxWoOscDet.root </filename>
-      <objname> juno_reco_dst </objname>
+      <filename> numu_wo_Osc.root </filename>
+      <objname> juno_true_tree </objname>
       <objtype> TTree </objtype>
     </atmo_jiangmen>
   </dst>

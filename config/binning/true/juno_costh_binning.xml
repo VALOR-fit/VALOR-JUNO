@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<binning>
+
+  <space>
+    Thetatrue
+  </space>
+
+  <type>
+    edge-to-edge
+  </type>
+
+  <Thetatrue_binning>
+    <bin_size> variable </bin_size>
+    <nbins>      10   </nbins>
+    <bin_edges>
+      -1.0, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0
+    </bin_edges>
+  </Thetatrue_binning>
+
+
+  
+</binning>
