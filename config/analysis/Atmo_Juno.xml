@@ -20,7 +20,7 @@
       <beam>         Atmo_Jiangmen                                                    </beam>
       <sample>       JFC_numubarCC                                              </sample>
       <observable>   Ereco                                                      </observable>
-      <mc>           mc/AtmoJunoFlux_numubarCCdet.xml               </mc>
+      <mc>           mc/AtmoJunoFlux_numuCCdet.xml               </mc>
       <data_class>   valor::GenericSingleSampleFitData                          </data_class>
       <model_class>  valor::GenericSingleSampleFitModel                         </model_class>
       <binning>      binning/juno_proposal_binning_ereco.xml                       </binning>
@@ -31,7 +31,7 @@
       <beam>         Atmo_Jiangmen                                                    </beam>
       <sample>       JFC_nueCC                                              </sample>
       <observable>   Ereco                                                      </observable>
-      <mc>           mc/AtmoJunoFlux_nueCCdet.xml               </mc>
+      <mc>           mc/AtmoJunoFlux_numuCCdet.xml               </mc>
       <data_class>   valor::GenericSingleSampleFitData                          </data_class>
       <model_class>  valor::GenericSingleSampleFitModel                         </model_class>
       <binning>      binning/juno_proposal_binning_ereco.xml                       </binning>
@@ -42,7 +42,7 @@
       <beam>         Atmo_Jiangmen                                                    </beam>
       <sample>       JFC_nuebarCC                                              </sample>
       <observable>   Ereco                                                      </observable>
-      <mc>           mc/AtmoJunoFlux_nuebarCCdet.xml               </mc>
+      <mc>           mc/AtmoJunoFlux_numuCCdet.xml               </mc>
       <data_class>   valor::GenericSingleSampleFitData                          </data_class>
       <model_class>  valor::GenericSingleSampleFitModel                         </model_class>
       <binning>      binning/juno_proposal_binning_ereco.xml                       </binning>

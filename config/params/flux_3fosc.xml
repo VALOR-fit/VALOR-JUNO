@@ -38,9 +38,9 @@
       <simple> dm23sq </simple>
     </name>
     <type> special </type>
-    <limits> 2.4e-3, 2.5e-3 </limits>
+    <limits> 2.2e-3, 3.0e-3 </limits>
     <range_mode> value </range_mode>
-    <range> 2.4e-3, 2.5e-3 </range>
+    <range> 2.2e-3, 3.0e-3 </range>
     <step_mode> value </step_mode>
     <step> 0.0001 </step>
     <init> 2.4e-3 </init>
