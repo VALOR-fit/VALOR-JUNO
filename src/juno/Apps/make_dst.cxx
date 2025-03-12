@@ -197,6 +197,8 @@ int processEvents( const std::vector<std::string> & inputFiles, const std::strin
     }
   }
 
+  delete mcrec; mcrec = 0;
+
   // Map to store counts for each reaction mode
   std::unordered_map<int, int> modeCounts;
 
@@ -334,8 +336,9 @@ int main(int argc, char** argv) {
   }
 
   std::vector<string> inputFiles;
-  for( const auto& entry : std::filesystem::directory_iterator(arg_input_directory) ) {
-    if( entry.path().extension() == ".root" ) inputFiles.emplace_back( entry.path() );
+  for( const auto& entry : std::filesystem::recursive_directory_iterator(arg_input_directory) ) {
+    if( entry.is_regular_file() && entry.path().extension() == ".root" )
+      inputFiles.emplace_back( entry.path() );
   }
 
   return processEvents(inputFiles, arg_output);
