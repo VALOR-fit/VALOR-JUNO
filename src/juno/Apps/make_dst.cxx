@@ -1,7 +1,6 @@
 #include <vector>
 #include <string>
 #include <iostream>
-#include <filesystem>
 #include <sstream>
 #include <map>
 #include <utility>
@@ -55,10 +54,11 @@
 #include "valor/Conventions/Sample.h"
 #include "valor/Conventions/BeamConf.h"
 
+
+
 using std::string;
 using namespace genie;
 using namespace valor;
-
 struct NormEntry {
     double energyLow;
     double costhLow;
@@ -71,7 +71,6 @@ struct NormEntry {
 
 std::vector<NormEntry> gNormTable;
 
-// Function to read normalization table from txt file
 bool readNormTable(const std::string& filename) {
     std::ifstream infile(filename);
     if (!infile) {
@@ -81,7 +80,6 @@ bool readNormTable(const std::string& filename) {
     std::string line;
     while (std::getline(infile, line)) {
         if (line.empty()) continue;
-        // Skip header or comment lines
         if (line[0] == '#' || line.find("----") != std::string::npos) continue;
         std::istringstream iss(line);
         NormEntry entry;
@@ -93,52 +91,66 @@ bool readNormTable(const std::string& filename) {
     return true;
 }
 
-std::string SampleTypeToString(valor::conv::Sample_t sample) {
-    switch (sample) {
-        case valor::conv::ksNuMuCC: return "numuCC";
-        case valor::conv::ksNuMuCC1piC: return "numuCC1piC";
-        case valor::conv::ksNuMuCC1pi0: return "numuCC1pi0";
-        case valor::conv::ksNuMuCC1piC1pi0: return "numuCC1piC1pi0";
-        case valor::conv::ksNuMuCCoth: return "numuCCoth";
-        case valor::conv::ksNuECC0pi: return "nueCC0pi";
-        case valor::conv::ksNuECC1piC: return "nueCC1piC";
-        case valor::conv::ksNuECC1pi0: return "nueCC1pi0";
-        case valor::conv::ksNuECCoth: return "nueCCoth";
-        case valor::conv::ksNuMuBarCChigh: return "numubarCChigh";
-        case valor::conv::ksNuMuBarCClow: return "numubarCClow";
-        case valor::conv::ksNuEBarCChigh: return "nuebarCChigh";
-        case valor::conv::ksNuEBarCClow: return "nuebarCClow";
-        default: return "undefined";
-    }
-}
+struct EventBranchData {
+    int nu_pdg;
+    bool is_CC;
+    bool is_NC;
+    bool is_charm;
+    bool is_strange;
+    bool is_QE;
+    bool is_MEC;
+    bool is_NuEEl;
+    bool is_IMD;
+    bool is_IMDanh;
+    bool is_Coherent;
+    std::vector<int> particlePDG;
+};
 
-valor::conv::Sample_t InferSampleType(int npi, int npi0, bool is_nue, bool is_antineutrino) {
-    if (is_nue) {
-        if (is_antineutrino) {
-            return valor::conv::ksNuEBarCChigh; 
-        } else {
-            if (npi == 0 && npi0 == 0) return valor::conv::ksNuECC;
-            if (npi == 1 && npi0 == 0) return valor::conv::ksNuECC1piC;
-            if (npi == 0 && npi0 == 1) return valor::conv::ksNuECC1pi0;
-            return valor::conv::ksNuECCoth;
-        }
+EventBranchData ExtractEventBranchData(const genie::EventRecord* event, bool use_final_state) {
+    EventBranchData data;
+    const genie::GHepParticle* neutrino = event->Probe();
+    data.nu_pdg = neutrino ? neutrino->Pdg() : -1;
+    
+    const genie::Interaction* interaction = event->Summary();
+    if (interaction->ProcInfo().IsWeakCC()) {
+        data.is_CC = true;
+        data.is_NC = false;
+    } else if (interaction->ProcInfo().IsWeakNC()) {
+        data.is_CC = false;
+        data.is_NC = true;
     } else {
-        if (is_antineutrino) {
-            return valor::conv::ksNuMuBarCChigh; 
-        } else {
-            if (npi == 0 && npi0 == 0) return valor::conv::ksNuMuCC;
-            if (npi == 1 && npi0 == 0) return valor::conv::ksNuMuCC1piC;
-            if (npi == 0 && npi0 == 1) return valor::conv::ksNuMuCC1pi0;
-            if (npi == 1 && npi0 == 1) return valor::conv::ksNuMuCC1piC1pi0;
-            return valor::conv::ksNuMuCCoth;
-        }
+        data.is_CC = data.is_NC = false;
     }
+    
+    data.is_charm   = util::EventContainsQuarkFlavour(event, genie::kPdgCQuark);
+    data.is_strange = util::EventContainsQuarkFlavour(event, genie::kPdgSQuark);
+    data.is_QE      = interaction->ProcInfo().IsQuasiElastic() && !data.is_strange && !data.is_charm;
+    data.is_MEC     = interaction->ProcInfo().IsMEC();
+    data.is_NuEEl   = interaction->ProcInfo().IsNuElectronElastic();
+    data.is_IMD     = interaction->ProcInfo().IsInverseMuDecay();
+    data.is_IMDanh  = interaction->ProcInfo().IsIMDAnnihilation();
+#if __GENIE_RELEASE_CODE__ >= GRELCODE(3, 4, 0)
+    data.is_Coherent = interaction->ProcInfo().IsCoherentProduction();
+#else
+    data.is_Coherent = interaction->ProcInfo().IsCoherent();
+#endif
+
+    std::vector<int> primary_hadr_system, final_hadr_system;
+    valor::util::GetHadronicSystems(event, primary_hadr_system, final_hadr_system);
+    const std::vector<int>& hadr_system = (use_final_state ? final_hadr_system : primary_hadr_system);
+    for (size_t i = 0; i < hadr_system.size(); ++i) {
+        const genie::GHepParticle* p = event->Particle(hadr_system[i]);
+        data.particlePDG.push_back(p->Pdg());
+    }
+    
+    return data;
 }
 
-#include <unordered_map>
-// ... (other includes)
-
+// -------------------- processEvents --------------------
 int processEvents(const std::vector<std::string>& inputFiles, const std::string& outputFileName) {
+    TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE");
+    outputFile->cd();
+    TTree* outputTree = new TTree("juno_true_tree", "Processed Data");
     TChain* ghep_tree = new TChain("gtree");
     static const int gPrintEveryNEvents = 200000;
     ghep_tree->SetMaxVirtualSize(-1);
@@ -175,10 +187,10 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
         }
     }
 
-    TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE");
-    TTree* outputTree = new TTree("juno_true_tree", "Processed Data");
+
     double Q2, W, E_true, costh_true, costh_reco, wght, LoE_true;
-    int isnc = 0, iscc = 0, nkaon = 0, npip = 0, npim = 0, npi0 = 0, reac_mod_wo_PID = -1;
+    int isnc = 0, iscc = 0, nkaon = 0, npip = 0, npim = 0, npi0 = 0;
+    int reac_mod_wo_PID = -1;
     int reac_mod = -1, nu_pdg = -1, event_id = 0, sample_branch = -1, beam = -1;
     outputTree->Branch("Q2", &Q2);
     outputTree->Branch("W", &W);
@@ -191,7 +203,8 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     outputTree->Branch("nKaon", &nkaon);
     outputTree->Branch("nPionp", &npip);
     outputTree->Branch("nPionm", &npim);
-    outputTree->Branch("nPion0", &npi0);
+    
+    outputTree->Branch("nPi0", &npi0);
     outputTree->Branch("reac_mode_wo_PID", &reac_mod_wo_PID);
     outputTree->Branch("reac_mode", &reac_mod);
     outputTree->Branch("nu_pdg", &nu_pdg);
@@ -200,7 +213,34 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     outputTree->Branch("sample", &sample_branch);
     outputTree->Branch("beam", &beam);
 
-    // Map to store counts for each reaction mode
+   
+    int nP = 0, nN = 0, nPip = 0, nPim = 0;
+    int nKp = 0, nKm = 0, nK0 = 0, nEM = 0, nOtherHad = 0, nNucleus = 0;
+    outputTree->Branch("nP", &nP);
+    outputTree->Branch("nN", &nN);
+    outputTree->Branch("nPip", &nPip);
+    outputTree->Branch("nPim", &nPim);
+    outputTree->Branch("nPi0_count", &npi0); 
+    outputTree->Branch("nKp", &nKp);
+    outputTree->Branch("nKm", &nKm);
+    outputTree->Branch("nK0", &nK0);
+    outputTree->Branch("nEM", &nEM);
+    outputTree->Branch("nOtherHad", &nOtherHad);
+    outputTree->Branch("nNucleus", &nNucleus);
+    bool isCC_flag = false, isNC_flag = false, isCharm_flag = false, isStrange_flag = false;
+    bool isQE_flag = false, isMEC_flag = false, isNuEEl_flag = false;
+    bool isIMD_flag = false, isIMDAnnihilation_flag = false, isCoherent_flag = false;
+    outputTree->Branch("isCC", &isCC_flag);
+    outputTree->Branch("isNC", &isNC_flag);
+    outputTree->Branch("isCharm", &isCharm_flag);
+    outputTree->Branch("isStrange", &isStrange_flag);
+    outputTree->Branch("isQE", &isQE_flag);
+    outputTree->Branch("isMEC", &isMEC_flag);
+    outputTree->Branch("isNuEEl", &isNuEEl_flag);
+    outputTree->Branch("isIMD", &isIMD_flag);
+    outputTree->Branch("isIMDAnnihilation", &isIMDAnnihilation_flag);
+    outputTree->Branch("isCoherent", &isCoherent_flag);
+
     std::unordered_map<int, int> modeCounts;
 
     int savedEvents = 0;
@@ -258,30 +298,69 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
                 costh_reco = costh_true;
                 LoE_true = 12742 / E_true;
                 Q2 = mcrec->event->Summary()->Kine().Q2(true);
-                W = mcrec->event->Summary()->Kine().W(true);
+                W  = mcrec->event->Summary()->Kine().W(true);
                 
-                // Apply the reaction mode determination:
+      
                 const auto& event = *(mcrec->event);
                 valor::conv::ReacMode_t reac_mode = valor::util::DetermineReactionMode(&event, false);
                 reac_mod = reac_mode;
-                
-                // Update reaction mode count
                 modeCounts[reac_mod]++;
                 
+ 
+                EventBranchData branchData = ExtractEventBranchData(mcrec->event, false);
+                nP = 0; nN = 0; nPip = 0; nPim = 0; npi0 = 0;
+                nKp = 0; nKm = 0; nK0 = 0; nEM = 0; nOtherHad = 0; nNucleus = 0;
+                for (size_t j = 0; j < branchData.particlePDG.size(); ++j) {
+                    int pdg = branchData.particlePDG[j];
+                    if (pdg == genie::kPdgProton || pdg == genie::kPdgAntiProton)
+                        nP++;
+                    else if (pdg == genie::kPdgNeutron || pdg == genie::kPdgAntiNeutron)
+                        nN++;
+                    else if (pdg == genie::kPdgPiP)
+                        nPip++;
+                    else if (pdg == genie::kPdgPiM)
+                        nPim++;
+                    else if (pdg == genie::kPdgPi0) {
+                        npi0++;  
+                    }
+                    else if (pdg == genie::kPdgKP)
+                        nKp++;
+                    else if (pdg == genie::kPdgKM)
+                        nKm++;
+                    else if (pdg == genie::kPdgK0 || pdg == genie::kPdgAntiK0)
+                        nK0++;
+                    else if (pdg == genie::kPdgGamma || pdg == genie::kPdgElectron || pdg == genie::kPdgPositron)
+                        nEM++;
+                    else if (genie::pdg::IsHadron(pdg))
+                        nOtherHad++;
+                    else if (genie::pdg::IsIon(pdg))
+                        nNucleus++;
+                }
+                isCC_flag         = branchData.is_CC;
+                isNC_flag         = branchData.is_NC;
+                isCharm_flag      = branchData.is_charm;
+                isStrange_flag    = branchData.is_strange;
+                isQE_flag         = branchData.is_QE;
+                isMEC_flag        = branchData.is_MEC;
+                isNuEEl_flag      = branchData.is_NuEEl;
+                isIMD_flag        = branchData.is_IMD;
+                isIMDAnnihilation_flag = branchData.is_IMDanh;
+                isCoherent_flag   = branchData.is_Coherent;
+
                 bool is_nue = (std::abs(nu_pdg) == 12);
                 bool is_antineutrino = (nu_pdg < 0);
                 if (isnc == 1) {
-                    sample_branch = valor::conv::ksJFCAtmoNC;       // JUNO Full contained Atmospheric NC (53)
+                    sample_branch = valor::conv::ksJFCAtmoNC;
                 } else if (std::abs(nu_pdg) == 12) {
                     if (nu_pdg > 0)
-                        sample_branch = valor::conv::ksJFCAtmoNuECC;    // JUNO Full contained Atmo nue CC (51)
+                        sample_branch = valor::conv::ksJFCAtmoNuECC;
                     else
-                        sample_branch = valor::conv::ksJFCAtmoNuEBarCC; // JUNO Full contained Atmo nuebar CC (52)
+                        sample_branch = valor::conv::ksJFCAtmoNuEBarCC;
                 } else if (std::abs(nu_pdg) == 14) {
                     if (nu_pdg > 0)
-                        sample_branch = valor::conv::ksJFCAtmoNuMuCC;   // JUNO Full contained Atmo numu CC (49)
+                        sample_branch = valor::conv::ksJFCAtmoNuMuCC;
                     else
-                        sample_branch = valor::conv::ksJFCAtmoNuMuBarCC; // JUNO Full contained Atmo numubar CC (50)
+                        sample_branch = valor::conv::ksJFCAtmoNuMuBarCC;
                 } else {
                     sample_branch = -1; 
                 }
@@ -293,15 +372,12 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
         }
     }
 
-    // Write out the tree and close the file
     outputTree->Write();
     outputFile->Close();
-    //delete ghep_tree;
-    delete outputFile;
+    delete ghep_tree;
     VLOG("valor_juno", pNOTICE) << "Done!";
     std::cout << "Total saved events: " << savedEvents << std::endl;
 
-    // Output the event counts for each reaction mode
     std::cout << "Reaction Mode Event Counts:" << std::endl;
     for (const auto& kv : modeCounts) {
         std::cout << "Mode " << kv.first << ": " << kv.second << " events." << std::endl;
@@ -309,10 +385,7 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     return 0;
 }
 
-
-
 int main(int argc, char** argv) {
-  /*
     if (argc < 4) {
         std::cout << "Usage: " << argv[0] << " <normalization txt file> <input files> <output file name>" << std::endl;
         return 1;
@@ -328,29 +401,4 @@ int main(int argc, char** argv) {
     }
     std::string outputFileName = argv[argc - 1];
     return processEvents(inputFiles, outputFileName);
-  */
-
-  CmdLnArgList arg;
-  arg.Read(argc,argv, "$VALOR_EXPT/config/apps/make_dst.arg");
-  VLOG("valor_juno", pNOTICE) << arg;
-  
-  string arg_input_normalisation = arg.GetString("input-normalisation");
-  string arg_input_directory     = arg.GetString("input-directory");
-  string arg_output              = arg.GetString("output");
-  string arg_sample              = arg.GetString("sample");
-
-  std::string thresholds = util::CompleteConfigPath(arg.GetString("mesg-thresholds"));
-  valor::Messenger::Instance()->Configure(thresholds);
-
-  if (!readNormTable(arg_input_normalisation)) {
-    return 1;
-  }
-
-  std::vector<string> inputFiles;
-  for( const auto& entry : std::filesystem::directory_iterator(arg_input_directory) ) {
-    if( entry.path().extension() == ".root" ) inputFiles.emplace_back( entry.path() );
-  }
-
-  return processEvents(inputFiles, arg_output);
 }
-
