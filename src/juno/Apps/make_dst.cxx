@@ -65,6 +65,9 @@
 #include "Framework/Interaction/Interaction.h"
 #include "Framework/Interaction/ProcessInfo.h"
 
+// memory tracking
+#include "TObjectTable.h"
+
 using namespace genie;
 using namespace valor;
 
@@ -130,7 +133,7 @@ double GetBaseline(double cosTheta, double R, double h) {
 int processEvents( const std::vector<std::string> & inputFiles, const std::string & outputFileName ) {
 
   // First setup output
-  TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE"); outputFile->cd();
+  TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE");
   TTree* outputTree = new TTree("juno_true_tree", "Processed Data");
 
   double Q2 = 0., W = 0., E_reco = 0., E_true = 0., costh_true = 0., costh_reco = 0., wght = 0.;
@@ -160,7 +163,6 @@ int processEvents( const std::vector<std::string> & inputFiles, const std::strin
   outputTree->Branch("beam", &beam);
 
   TChain* ghep_tree = new TChain("gtree");
-  ghep_tree->SetMaxVirtualSize(-1);
   for (const auto& file : inputFiles) {
     ghep_tree->Add(file.c_str());
   }
@@ -174,128 +176,138 @@ int processEvents( const std::vector<std::string> & inputFiles, const std::strin
   std::vector<int> binCounts(gNormTable.size(), 0);
   for (Long64_t i = 0; i < nentries; ++i) {
     ghep_tree->GetEntry(i);
-    if (mcrec && mcrec->event) {
-      const TLorentzVector& nuP4 = *(mcrec->event->Probe()->P4());
-      double E_true_tmp = nuP4.Energy();
-      double costh_true_tmp = -nuP4.Pz() / E_true_tmp;
-      int binIndex = -1;
-      double bestEnergy = -1;
-      double bestCosth = -100;
-      for (size_t j = 0; j < gNormTable.size(); ++j) {
-	const NormEntry& entry = gNormTable[j];
-	if (E_true_tmp >= entry.energyLow && costh_true_tmp >= entry.costhLow) {
-	  if (entry.energyLow > bestEnergy || (entry.energyLow == bestEnergy && entry.costhLow > bestCosth)) {
-	    bestEnergy = entry.energyLow;
-	    bestCosth = entry.costhLow;
-	    binIndex = j;
-	  }
+    if( !mcrec ) continue;
+
+    TLorentzVector& nuP4 = *(mcrec->event->Probe()->GetP4()); // GetP4() NOT P4(), it's critical!
+    double E_true_tmp = nuP4.Energy();
+    double costh_true_tmp = -nuP4.Pz() / E_true_tmp;
+    int binIndex = -1;
+    double bestEnergy = -1;
+    double bestCosth = -100;
+    for (size_t j = 0; j < gNormTable.size(); ++j) {
+      const NormEntry& entry = gNormTable[j];
+      if (E_true_tmp >= entry.energyLow && costh_true_tmp >= entry.costhLow) {
+	if (entry.energyLow > bestEnergy || (entry.energyLow == bestEnergy && entry.costhLow > bestCosth)) {
+	  bestEnergy = entry.energyLow;
+	  bestCosth = entry.costhLow;
+	  binIndex = j;
 	}
       }
+
       if (binIndex != -1) {
 	binCounts[binIndex]++;
       }
     }
-  }
 
-  delete mcrec; mcrec = 0;
+    // Crucially, delete the mcrec INSIDE HERE
+    delete mcrec; mcrec = 0;
+    
+  } // loop over entries
 
   // Map to store counts for each reaction mode
   std::unordered_map<int, int> modeCounts;
 
   int savedEvents = 0;
-  TRandom3 randGen;
+  TRandom3 randGen = valor::Rnd::Instance()->RndOther();
   for (Long64_t i = 0; i < nentries; ++i) {
     ghep_tree->GetEntry(i);
     if (gPrintEveryNEvents && !(i % gPrintEveryNEvents)) {
       VLOG("valor_juno", pNOTICE) << "** Reading event: " << i;
     }
-    if (mcrec && mcrec->event) {
-      const TLorentzVector& nuP4 = *(mcrec->event->Probe()->P4());
-      E_true = nuP4.Energy();
-      costh_true = -nuP4.Pz() / E_true;
-      int binIndex = -1;
-      double bestEnergy = -1;
-      double bestCosth = -100;
-      for (size_t j = 0; j < gNormTable.size(); ++j) {
-	const NormEntry& entry = gNormTable[j];
-	if (E_true >= entry.energyLow && costh_true >= entry.costhLow) {
-	  if (entry.energyLow > bestEnergy || (entry.energyLow == bestEnergy && entry.costhLow > bestCosth)) {
-	    bestEnergy = entry.energyLow;
-	    bestCosth = entry.costhLow;
-	    binIndex = j;
-	  }
-	}
-      }
-      double desiredCount = 0.0;
-      if (binIndex != -1) {
-	const NormEntry& bestEntry = gNormTable[binIndex];
-	const genie::GHepParticle* neutrino = mcrec->event->Probe();
-	if (neutrino != nullptr) {
-	  nu_pdg = neutrino->Pdg();
-	}
-	const genie::Interaction* interaction = mcrec->event->Summary();
-	if (interaction->ProcInfo().IsWeakCC()) {
-	  iscc = 1; isnc = 0;
-	} else if (interaction->ProcInfo().IsWeakNC()) {
-	  iscc = 0; isnc = 1;
-	}
-	if (isnc == 1) {
-	  desiredCount = bestEntry.nc;
-	} else if (std::abs(nu_pdg) == 12) {
-	  desiredCount = (nu_pdg > 0) ? bestEntry.nue : bestEntry.nuebar;
-	} else if (std::abs(nu_pdg) == 14) {
-	  desiredCount = (nu_pdg > 0) ? bestEntry.numu : bestEntry.numubar;
-	}
-      }
-      double p = 1.0;
-      if (binIndex != -1 && binCounts[binIndex] > 0) {
-	p = desiredCount / binCounts[binIndex];
-	if (p > 1.0) p = 1.0;
-      }
-      if (randGen.Uniform() < p) {
-	E_reco = E_true;
-	costh_reco = costh_true;
-	// This does not look right 
-	//LoE_true = 12742 / E_true;
+    if( !mcrec ) continue;
 
-	/*
-	 * I will make some assumptions. 
-	 * Assume the Earth is a 2d circle, (i.e. the plane of neutrino propagation contains a great circle - rotational invariance implies that is always true, as phi is defined wrt the ray connecting JUNO to the centre of the Earth.
-	 * Assuming the radius of the earth to be R, and the neutrino to be emitted at height h in the atmosphere, (i.e. sitting on a sphere of radius R+h), Mathematica gives us the length as
-	 * L(h, R, theta) = sqrt( (R*cos(theta))^2 + h^2 + 2Rh ) - Rcos(theta)
-	 * TODO - extend to different baselines? Keep all height = 15 km now
-	 */
-
-	L_reco = GetBaseline( costh_reco, earth_radius, neutrino_atmo_height );
-	L_true = GetBaseline( costh_true, earth_radius, neutrino_atmo_height );
-	
-	Q2 = mcrec->event->Summary()->Kine().Q2(true);
-	W = mcrec->event->Summary()->Kine().W(true);
-                
-	// Apply the reaction mode determination:
-	const auto& event = *(mcrec->event);
-	valor::conv::ReacMode_t reac_mode = valor::util::DetermineReactionMode(&event, false);
-	reac_mod = reac_mode;
-                
-	// Update reaction mode count
-	modeCounts[reac_mod]++;
-                
-	bool is_nue = (std::abs(nu_pdg) == 12);
-	bool is_antineutrino = (nu_pdg < 0);
-	sample = static_cast<int>( InferSampleType( iscc, is_nue, is_antineutrino ) );
-	beam = static_cast<int>( valor::conv::kbJUNO_Atmo );
-	wght = p;
-	outputTree->Fill();
-	savedEvents++;
+    genie::EventRecord  * event       = mcrec->event;
+    genie::GHepParticle * neutrino    = event->Probe();
+    TLorentzVector      * nuP4        = neutrino->GetP4();
+    genie::Interaction  * interaction = event->Summary();
+    genie::Kinematics   * kinematics  = interaction->KinePtr();
+    genie::ProcessInfo  * procInfo    = interaction->ProcInfoPtr();
+    
+    E_true = nuP4->Energy();
+    costh_true = -nuP4->Pz() / E_true;
+    int binIndex = -1;
+    double bestEnergy = -1;
+    double bestCosth = -100;
+    for (size_t j = 0; j < gNormTable.size(); ++j) {
+      const NormEntry& entry = gNormTable[j];
+      if (E_true >= entry.energyLow && costh_true >= entry.costhLow) {
+	if (entry.energyLow > bestEnergy || (entry.energyLow == bestEnergy && entry.costhLow > bestCosth)) {
+	  bestEnergy = entry.energyLow;
+	  bestCosth = entry.costhLow;
+	  binIndex = j;
+	}
       }
     }
-  }
+    double desiredCount = 0.0;
+    if (binIndex != -1) {
+      const NormEntry& bestEntry = gNormTable[binIndex];
+      if (neutrino != nullptr) {
+	nu_pdg = neutrino->Pdg();
+      }
+      
+      if (procInfo->IsWeakCC()) {
+	iscc = 1; isnc = 0;
+      } else if (procInfo->IsWeakNC()) {
+	iscc = 0; isnc = 1;
+      }
+      if (isnc == 1) {
+	desiredCount = bestEntry.nc;
+      } else if (std::abs(nu_pdg) == 12) {
+	desiredCount = (nu_pdg > 0) ? bestEntry.nue : bestEntry.nuebar;
+      } else if (std::abs(nu_pdg) == 14) {
+	desiredCount = (nu_pdg > 0) ? bestEntry.numu : bestEntry.numubar;
+      }
+    }
+    double p = 1.0;
+    if (binIndex != -1 && binCounts[binIndex] > 0) {
+      p = desiredCount / binCounts[binIndex];
+      if (p > 1.0) p = 1.0;
+    }
+    if (randGen.Uniform() < p) {
+      E_reco = E_true;
+      costh_reco = costh_true;
+
+      /*
+       * I will make some assumptions. 
+       * Assume the Earth is a 2d circle, (i.e. the plane of neutrino propagation contains a great circle - rotational invariance implies that is always true, as phi is defined wrt the ray connecting JUNO to the centre of the Earth.
+       * Assuming the radius of the earth to be R, and the neutrino to be emitted at height h in the atmosphere, (i.e. sitting on a sphere of radius R+h), Mathematica gives us the length as
+       * L(h, R, theta) = sqrt( (R*cos(theta))^2 + h^2 + 2Rh ) - Rcos(theta)
+       * TODO - extend to different baselines? Keep all height = 15 km now
+       */
+
+      L_reco = GetBaseline( costh_reco, earth_radius, neutrino_atmo_height );
+      L_true = GetBaseline( costh_true, earth_radius, neutrino_atmo_height );
+
+      Q2 = kinematics->Q2(true);
+      W = kinematics->W(true);
+                
+      // Apply the reaction mode determination:
+      valor::conv::ReacMode_t reac_mode = valor::util::DetermineReactionMode(mcrec->event, false);
+      reac_mod = reac_mode;
+                
+      // Update reaction mode count
+      modeCounts[reac_mod]++;
+                
+      bool is_nue = (std::abs(nu_pdg) == 12);
+      bool is_antineutrino = (nu_pdg < 0);
+      sample = static_cast<int>( InferSampleType( iscc, is_nue, is_antineutrino ) );
+      beam = static_cast<int>( valor::conv::kbJUNO_Atmo );
+      wght = p;
+      outputTree->Fill();
+      savedEvents++;
+    } // save this event
+
+    // Clean up each event. It'll handle destruction and freeing of nested classes
+    delete event;
+    // But TLorentzVectors are not nested, so they need to be deleted
+    delete nuP4;
+  } // loop over events
 
   // Write out the tree and close the file
   outputTree->Write();
   outputFile->Close();
   //delete ghep_tree;
-  //delete outputFile;
+  delete outputFile;
   VLOG("valor_juno", pNOTICE) << "Done!";
   std::cout << "Total saved events: " << savedEvents << std::endl;
 
@@ -304,6 +316,7 @@ int processEvents( const std::vector<std::string> & inputFiles, const std::strin
   for (const auto& kv : modeCounts) {
     std::cout << "Mode " << kv.first << ": " << kv.second << " events." << std::endl;
   }
+  
   return 0;
 }
 
@@ -335,7 +348,7 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  std::vector<string> inputFiles;
+  std::vector<std::string> inputFiles;
   for( const auto& entry : std::filesystem::recursive_directory_iterator(arg_input_directory) ) {
     if( entry.is_regular_file() && entry.path().extension() == ".root" )
       inputFiles.emplace_back( entry.path() );
