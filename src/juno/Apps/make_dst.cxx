@@ -11,6 +11,7 @@
 	     --mesg-thresholds     : Message thresholds [default: verbosity.xml]
 
 \author    John Plows <kplows \at liverpool.ac.uk>
+           Beth Slater <b.slater2 \at liverpool.ac.uk>
            University of Liverpool
 
            Yaoqi Cao <yqc23phd \at gmail.com>
@@ -114,13 +115,18 @@ bool readNormTable(const std::string& filename) {
 //--------------------------------------------------------------------------------------------------
 // SampleTypeToString is Sample.cxx::SampleTypeToString (with the correct JUNO samples)
 //--------------------------------------------------------------------------------------------------
-valor::conv::Sample_t InferSampleType(bool is_cc, bool is_nue, bool is_antineutrino) {
+valor::conv::Sample_t InferSampleType(bool is_cc, bool is_nc, bool is_nue, bool is_antineutrino) {
   if( is_cc ) {
     if ( is_nue && !is_antineutrino) return valor::conv::ksJUNO_FC_CC_Nue;
     if ( is_nue &&  is_antineutrino) return valor::conv::ksJUNO_FC_CC_Nuebar;
     if (!is_nue && !is_antineutrino) return valor::conv::ksJUNO_FC_CC_Numu;
     if (!is_nue &&  is_antineutrino) return valor::conv::ksJUNO_FC_CC_Numubar;
-  } else return valor::conv::ksJUNO_FC_NC;
+  } else if( is_nc ) {
+    if ( is_nue && !is_antineutrino) return valor::conv::ksJUNO_FC_NC_Nue;
+    if ( is_nue &&  is_antineutrino) return valor::conv::ksJUNO_FC_NC_Nuebar;
+    if (!is_nue && !is_antineutrino) return valor::conv::ksJUNO_FC_NC_Numu;
+    if (!is_nue &&  is_antineutrino) return valor::conv::ksJUNO_FC_NC_Numubar;
+  }
 
   return valor::conv::ksUndefined;
 }
@@ -258,12 +264,14 @@ int processEvents( const std::vector<std::string> & inputFiles, const std::strin
 	desiredCount = (nu_pdg > 0) ? bestEntry.numu : bestEntry.numubar;
       }
     }
+
     double p = 1.0;
     if (binIndex != -1 && binCounts[binIndex] > 0) {
-      p = desiredCount / binCounts[binIndex];
+      p = 1.0 / (desiredCount / binCounts[binIndex]);
       if (p > 1.0) p = 1.0;
     }
-    if (randGen.Uniform() < p) {
+    double unif = randGen.Uniform();
+    if (unif < p) {
       E_reco = E_true;
       costh_reco = costh_true;
 
@@ -290,7 +298,7 @@ int processEvents( const std::vector<std::string> & inputFiles, const std::strin
                 
       bool is_nue = (std::abs(nu_pdg) == 12);
       bool is_antineutrino = (nu_pdg < 0);
-      sample = static_cast<int>( InferSampleType( iscc, is_nue, is_antineutrino ) );
+      sample = static_cast<int>( InferSampleType( iscc, isnc, is_nue, is_antineutrino ) );
       beam = static_cast<int>( valor::conv::kbJUNO_Atmo );
       wght = p;
       outputTree->Fill();
