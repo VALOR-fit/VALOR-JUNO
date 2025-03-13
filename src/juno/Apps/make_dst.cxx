@@ -136,7 +136,7 @@ double GetBaseline(double cosTheta, double R, double h) {
   return std::sqrt( std::pow( R * cosTheta, 2.0 ) + 2.0 * h * R + h * h ) - R * cosTheta;
 }
 //--------------------------------------------------------------------------------------------------
-int processEvents( const std::vector<std::string> & inputFiles, const std::string & outputFileName ) {
+int processEvents( const std::vector<std::string> & inputFiles,const std::vector<conv::Sample_t> &  inputSamples, const conv::BeamConf_t & inputBeam, const std::string & outputFileName ) {
 
   // First setup output
   TFile* outputFile = new TFile(outputFileName.c_str(), "RECREATE");
@@ -144,8 +144,8 @@ int processEvents( const std::vector<std::string> & inputFiles, const std::strin
 
   double Q2 = 0., W = 0., E_reco = 0., E_true = 0., costh_true = 0., costh_reco = 0., wght = 0.;
   double L_true = 0., L_reco = 0.;
-  int isnc = 0, iscc = 0, nkaon = 0, npip = 0, npim = 0, npi0 = 0, reac_mod_wo_PID = -1;
-  int reac_mod = -1, nu_pdg = -1, event_id = 0, sample = -1, beam = -1;
+  bool isnc = 0, iscc = 0;
+  int reac_mod_wo_PID = -1, reac_mod = -1, nu_pdg = -1, event_id = 0, sample = -1, beam = -1;
   outputTree->Branch("Q2", &Q2);
   outputTree->Branch("W", &W);
   outputTree->Branch("enu_true", &E_true);
@@ -156,10 +156,6 @@ int processEvents( const std::vector<std::string> & inputFiles, const std::strin
   outputTree->Branch("L_reco", &L_reco);
   outputTree->Branch("nCC", &iscc);
   outputTree->Branch("nNC", &isnc);
-  outputTree->Branch("nKaon", &nkaon);
-  outputTree->Branch("nPionp", &npip);
-  outputTree->Branch("nPionm", &npim);
-  outputTree->Branch("nPion0", &npi0);
   outputTree->Branch("reac_mode_wo_PID", &reac_mod_wo_PID);
   outputTree->Branch("reac_mode", &reac_mod);
   outputTree->Branch("nu_pdg", &nu_pdg);
@@ -210,16 +206,28 @@ int processEvents( const std::vector<std::string> & inputFiles, const std::strin
     
   } // loop over entries
 
+  //
+  // event loop
+  //
+
   // Map to store counts for each reaction mode
   std::unordered_map<int, int> modeCounts;
+  std::vector<Long64_t> nev_accept_by_mode;
+  for (int im = 0 ; im < valor::conv::kNReacModes; im++) {
+    nev_accept_by_mode.push_back(0);
+  }
 
-  int savedEvents = 0;
+  Long64_t savedEvents = 0;
   TRandom3 randGen = valor::Rnd::Instance()->RndOther();
   for (Long64_t i = 0; i < nentries; ++i) {
     ghep_tree->GetEntry(i);
     if (gPrintEveryNEvents && !(i % gPrintEveryNEvents)) {
       VLOG("valor_juno", pNOTICE) << "** Reading event: " << i;
+    } else {
+      VLOG("valor_juno", pDEBUG) << "** Reading event: " << i
+        <<" - so far accepted " << savedEvents;
     }
+
     if( !mcrec ) continue;
 
     genie::EventRecord  * event       = mcrec->event;
@@ -264,14 +272,12 @@ int processEvents( const std::vector<std::string> & inputFiles, const std::strin
 	desiredCount = (nu_pdg > 0) ? bestEntry.numu : bestEntry.numubar;
       }
     }
-
     double p = 1.0;
     if (binIndex != -1 && binCounts[binIndex] > 0) {
-      p = 1.0 / (desiredCount / binCounts[binIndex]);
+      p = desiredCount / binCounts[binIndex];
       if (p > 1.0) p = 1.0;
     }
-    double unif = randGen.Uniform();
-    if (unif < p) {
+    if (randGen.Uniform() < p) {
       E_reco = E_true;
       costh_reco = costh_true;
 
@@ -299,10 +305,20 @@ int processEvents( const std::vector<std::string> & inputFiles, const std::strin
       bool is_nue = (std::abs(nu_pdg) == 12);
       bool is_antineutrino = (nu_pdg < 0);
       sample = static_cast<int>( InferSampleType( iscc, isnc, is_nue, is_antineutrino ) );
-      beam = static_cast<int>( valor::conv::kbJUNO_Atmo );
+      int cnt = count(inputSamples.begin(), inputSamples.end(), sample);
+      if(sample == -1){
+        VLOG("valor_juno",pINFO) << "Current event has an undefined sample so skipping";
+	continue; 
+      }else if(cnt == 0){
+        VLOG("valor_juno",pINFO) << "Current event has an undesired sample so skipping";
+	continue;
+      }
+      beam = static_cast<int>(inputBeam);
+      //beam = static_cast<int>( valor::conv::kbJUNO_Atmo );
       wght = p;
       outputTree->Fill();
       savedEvents++;
+      nev_accept_by_mode[reac_mod] += 1;
     } // save this event
 
     // Clean up each event. It'll handle destruction and freeing of nested classes
@@ -311,24 +327,41 @@ int processEvents( const std::vector<std::string> & inputFiles, const std::strin
     delete nuP4;
   } // loop over events
 
+  for (unsigned int im = 0 ; im < nev_accept_by_mode.size(); im++) {
+    valor::conv::ReacMode_t m = (valor::conv::ReacMode_t)im;
+    if(nev_accept_by_mode[im] > 0) VLOG("valor_sbn", pNOTICE) << "Selected "<<nev_accept_by_mode[im]<<" events of mode "<<valor::util::AsString(m);
+  }
+
+  double f = 100. * (double)savedEvents / (double)nentries;
+  VLOG("valor_juno", pNOTICE) <<
+    "Used " << f << "% (" << savedEvents << "/" << nentries
+    << ") of input events.";
+
   // Write out the tree and close the file
   outputTree->Write();
   outputFile->Close();
   //delete ghep_tree;
   delete outputFile;
-  VLOG("valor_juno", pNOTICE) << "Done!";
-  std::cout << "Total saved events: " << savedEvents << std::endl;
-
-  // Output the event counts for each reaction mode
+  
+  /*// Output the event counts for each reaction mode
   std::cout << "Reaction Mode Event Counts:" << std::endl;
   for (const auto& kv : modeCounts) {
     std::cout << "Mode " << kv.first << ": " << kv.second << " events." << std::endl;
-  }
+  }*/
   
   return 0;
 }
+//--------------------------------------------------------------------------------------------------
 
 int main(int argc, char** argv) {
+
+  time_t scriptstartrawtime;
+  struct tm * scriptstarttimeinfo;
+  time (&scriptstartrawtime);
+  scriptstarttimeinfo = localtime (&scriptstartrawtime);
+  std::cout << "-----------------------------------------------------------" << std::endl;
+  std::cout << " Script start local time and date:  " << asctime(scriptstarttimeinfo);
+  std::cout << "-----------------------------------------------------------" << std::endl;
 
   // Return usage if user asks for -h
   for( int i = 1 ; i < argc ; i++ ) {
@@ -345,9 +378,11 @@ int main(int argc, char** argv) {
   arg.Read(argc,argv, "$VALOR_EXPT/config/apps/make_dst.arg");
   VLOG("valor_juno", pNOTICE) << arg;
   
-  string arg_input_normalisation = arg.GetString("input-normalisation");
-  string arg_input_directory     = arg.GetString("input-directory");
-  string arg_output              = arg.GetString("output");
+  string arg_input_normalisation         = arg.GetString("input-normalisation");
+  string arg_input_directory             = arg.GetString("input-directory");
+  string arg_output                      = arg.GetString("output");
+  string arg_input_beam                  = arg.GetString("beam");
+  std::vector<string>  arg_input_samples = arg.GetStringVec("samples");
 
   std::string thresholds = util::CompleteConfigPath(arg.GetString("mesg-thresholds"));
   valor::Messenger::Instance()->Configure(thresholds);
@@ -356,11 +391,44 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  // Get the sample and beam configuration
+  std::vector<std::string> samples;
+  std::vector<conv::Sample_t> inputSamples;
+  if(std::find(arg_input_samples.begin(), arg_input_samples.end(), "all") != arg_input_samples.end()) {
+    //samples = {"CCincl_fc", "numuCC_fc", "numubarCC_fc", "nueCC_fc", "nuebarCC_fc", "NCincl_fc", "numuNC_fc", "numubarNC_fc", "nueNC_fc", "nuebarNC_fc"};
+    samples = {"numuCC_fc", "numubarCC_fc", "nueCC_fc", "nuebarCC_fc", "numuNC_fc", "numubarNC_fc", "nueNC_fc", "nuebarNC_fc"};
+    for(string sample : samples){
+      inputSamples.push_back(util::SampleFromString(sample));
+    }
+  }else{
+    for(string sample : arg_input_samples){
+      conv::Sample_t curr_sample = util::SampleFromString(sample);
+      assert(curr_sample != conv::ksUndefined);
+      inputSamples.push_back(curr_sample);
+    }
+  }
+  conv::BeamConf_t inputBeam = util::BeamConfFromString(arg_input_beam);
+  assert(inputBeam != conv::kbUndefined);
+
   std::vector<std::string> inputFiles;
   for( const auto& entry : std::filesystem::recursive_directory_iterator(arg_input_directory) ) {
     if( entry.is_regular_file() && entry.path().extension() == ".root" )
       inputFiles.emplace_back( entry.path() );
   }
 
-  return processEvents(inputFiles, arg_output);
+  processEvents(inputFiles, inputSamples, inputBeam, arg_output);
+
+  VLOG("valor_sbn", pNOTICE)  << "Done!";
+
+  time_t endrawtime;
+  struct tm * endtimeinfo;
+  time (&endrawtime);
+  endtimeinfo = localtime (&endrawtime);
+  time_t total_time = endrawtime-scriptstartrawtime;
+  std::cout << "-----------------------------------------------------------" << std::endl;
+  std::cout << " End local time and date  :  " << asctime(endtimeinfo);
+  std::cout << " Total time taken         :  " << total_time/static_cast<double>(60) << " minutes" << std::endl;
+  std::cout << "-----------------------------------------------------------" << std::endl;
+
+  return 0;
 }

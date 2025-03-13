@@ -4,3 +4,5 @@ input-normalisation                |   string       |  mandatory  |   -
 input-directory                    |   string       |  mandatory  |   -
 output                             |   string       |  optional   |  valor_juno_dst.root
 mesg-thresholds                    |   string       |  optional   |  verbosity.xml
+samples                            |   stringvec    |  optional   |  all
+beam                               |   string       |  optional   |  JUNO

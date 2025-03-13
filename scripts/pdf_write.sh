@@ -1,11 +1,5 @@
-${VALOR_FMWK}/bin/valor-write_pdf \
-  --config ${VALOR_EXPT}/config/analysis/Atmo_Juno_numu.xml \
-  --write-opt pdft_vf+pdft_rf+pdfcs_rf+pdfcs_vf+SB \
+valor-write_pdf \
+  --config analysis/juno_numu_stat_atmo.xml \
+  --write-opt pdfts_rf+SB \
   --physics-hypothesis void\
-  --input-mixing12 0.3 \
-  --input-mixing13 0.022 \
-  --input-mixing23 0.5 \
-  --input-cpv 0.1 \
-  --input-dm12sq 7.5e-5 \
-  --input-dm23sq 2.45e-3 \
-  --output-name 3f_osc_void  
+  --output-name outputs/write_pdf_juno_void  
