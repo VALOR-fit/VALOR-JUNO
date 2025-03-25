@@ -2,17 +2,17 @@
 
 <valor> 
 
-  <element_list name="Atmo_Juno_numu">
+  <element_list name="Atmo_Juno_nue">
 
-    <element name="Atmo_numuCC">
+    <element name="Atmo_nueCC">
       <detector>     JUNO                                                 </detector>
       <beam>         Atmo_Jiangmen                                                    </beam>
-      <sample>       JFC_numuCC                                              </sample>
-      <observable>   Thetareco                                                      </observable>
-      <mc>           mc/AtmoJunoFlux_numuCCdet.xml               </mc>
+      <sample>       JFC_nueCC                                              </sample>
+      <observable>   Etrue                                                     </observable>
+      <mc>           mc/AtmoJunoFlux_nuebarCCincl.xml               </mc>
       <data_class>   valor::GenericSingleSampleFitData                          </data_class>
       <model_class>  valor::GenericSingleSampleFitModel                         </model_class>
-      <binning>      binning/juno_proposal_binning_costhreco.xml                       </binning>
+      <binning>      binning/juno_proposal_binning_ereco.xml                       </binning>
     </element>
   
   </element_list>

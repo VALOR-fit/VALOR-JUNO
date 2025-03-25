@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+<valor> 
+
+  <element_list name="Atmo_Juno_numu">
+
+    <element name="Atmo_numubarCC">
+      <detector>     JUNO                                                 </detector>
+      <beam>         Atmo_Jiangmen                                                    </beam>
+      <sample>       JFC_numubarCC                                              </sample>
+      <observable>   Etrue                                                      </observable>
+      <mc>           mc/AtmoJunoFlux_numubarCCincl_NO.xml               </mc>
+      <data_class>   valor::GenericSingleSampleFitData                          </data_class>
+      <model_class>  valor::GenericSingleSampleFitModel                         </model_class>
+      <binning>      binning/juno_proposal_binning_ereco.xml                       </binning>
+    </element>
+  
+  </element_list>
+  
+  <parameter_definitions>
+    <filename desc="juno_flux_parameters">       params/flux_3fosc.xml            </filename>
+  </parameter_definitions>
+
+</valor> 

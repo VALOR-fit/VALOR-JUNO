@@ -8,8 +8,8 @@
       <detector>     JUNO                                                 </detector>
       <beam>         Atmo_Jiangmen                                                    </beam>
       <sample>       JFC_numuCC                                              </sample>
-      <observable>   Ereco,Thetareco                                                     </observable>
-      <mc>           mc/AtmoJunoFlux_numuCCdet.xml               </mc>
+      <observable>   Etrue,Thetatrue                                                     </observable>
+      <mc>           mc/AtmoJunoFlux_numuCCincl.xml               </mc>
       <data_class>   valor::GenericSingleSampleFitData                          </data_class>
       <model_class>  valor::GenericSingleSampleFitModel                         </model_class>
       <binning>      binning/juno_proposal_binning_2D.xml                       </binning>

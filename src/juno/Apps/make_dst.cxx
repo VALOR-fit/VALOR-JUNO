@@ -10,7 +10,6 @@
 #include <condition_variable>
 #include <thread>
 #include <TColor.h>
-
 //#include <ROOT/RDF/RInterface.hxx>
 //#include <ROOT/RDFHelpers.hxx>
 //#include <ROOT/RDataFrame.hxx>
@@ -54,11 +53,10 @@
 #include "valor/Conventions/Sample.h"
 #include "valor/Conventions/BeamConf.h"
 
-
-
 using std::string;
 using namespace genie;
 using namespace valor;
+
 struct NormEntry {
     double energyLow;
     double costhLow;
@@ -161,13 +159,16 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     ghep_tree->SetBranchAddress("gmcrec", &mcrec);
     Long64_t nentries = ghep_tree->GetEntries();
 
-    std::vector<int> binCounts(gNormTable.size(), 0);
+    // First pass: count events per bin and per category
+    // Categories: "nc", "nue", "nuebar", "numu", "numubar"
+    std::vector<std::unordered_map<std::string, int>> binCategoryCounts(gNormTable.size());
     for (Long64_t i = 0; i < nentries; ++i) {
         ghep_tree->GetEntry(i);
         if (mcrec && mcrec->event) {
             const TLorentzVector& nuP4 = *(mcrec->event->Probe()->P4());
             double E_true_tmp = nuP4.Energy();
-            double costh_true_tmp = -nuP4.Pz() / E_true_tmp;
+            double costh_true_tmp = -nuP4.Pz() / E_true_tmp;            
+            if (E_true_tmp > 20.0) continue;
             int binIndex = -1;
             double bestEnergy = -1;
             double bestCosth = -100;
@@ -182,19 +183,35 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
                 }
             }
             if (binIndex != -1) {
-                binCounts[binIndex]++;
+                const genie::GHepParticle* neutrino = mcrec->event->Probe();
+                int nu_pdg = (neutrino ? neutrino->Pdg() : -1);
+                const genie::Interaction* interaction = mcrec->event->Summary();
+                std::string category;
+                if (interaction->ProcInfo().IsWeakNC()) {
+                    category = "nc";
+                } else if (std::abs(nu_pdg) == 12) {
+                    category = (nu_pdg > 0) ? "nue" : "nuebar";
+                } else if (std::abs(nu_pdg) == 14) {
+                    category = (nu_pdg > 0) ? "numu" : "numubar";
+                } else {
+                    category = "unknown";
+                }
+                if (category != "unknown") {
+                    binCategoryCounts[binIndex][category]++;
+                }
             }
         }
     }
 
-
-    double Q2, W, E_true, costh_true, costh_reco, wght, LoE_true;
+    // Branch variable declarations
+    double Q2, W, E_true, E_reco, costh_true, costh_reco, wght, LoE_true;
     int isnc = 0, iscc = 0, nkaon = 0, npip = 0, npim = 0, npi0 = 0;
     int reac_mod_wo_PID = -1;
     int reac_mod = -1, nu_pdg = -1, event_id = 0, sample_branch = -1, beam = -1;
     outputTree->Branch("Q2", &Q2);
     outputTree->Branch("W", &W);
     outputTree->Branch("enu_true", &E_true);
+    outputTree->Branch("enu_reco", &E_reco);
     outputTree->Branch("LoverE_true", &LoE_true);
     outputTree->Branch("costh_true", &costh_true);
     outputTree->Branch("costh_reco", &costh_reco);
@@ -203,7 +220,6 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     outputTree->Branch("nKaon", &nkaon);
     outputTree->Branch("nPionp", &npip);
     outputTree->Branch("nPionm", &npim);
-    
     outputTree->Branch("nPi0", &npi0);
     outputTree->Branch("reac_mode_wo_PID", &reac_mod_wo_PID);
     outputTree->Branch("reac_mode", &reac_mod);
@@ -213,14 +229,13 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     outputTree->Branch("sample", &sample_branch);
     outputTree->Branch("beam", &beam);
 
-   
     int nP = 0, nN = 0, nPip = 0, nPim = 0;
     int nKp = 0, nKm = 0, nK0 = 0, nEM = 0, nOtherHad = 0, nNucleus = 0;
     outputTree->Branch("nP", &nP);
     outputTree->Branch("nN", &nN);
     outputTree->Branch("nPip", &nPip);
     outputTree->Branch("nPim", &nPim);
-    outputTree->Branch("nPi0_count", &npi0); 
+    outputTree->Branch("nPi0_count", &npi0);
     outputTree->Branch("nKp", &nKp);
     outputTree->Branch("nKm", &nKm);
     outputTree->Branch("nK0", &nK0);
@@ -245,14 +260,20 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
 
     int savedEvents = 0;
     TRandom3 randGen;
+
+    // Prepare maps to track processed and accepted counts per bin and category
+    std::vector<std::unordered_map<std::string, int>> binCategoryProcessed(gNormTable.size());
+    std::vector<std::unordered_map<std::string, int>> binCategoryAccepted(gNormTable.size());
+
     for (Long64_t i = 0; i < nentries; ++i) {
         ghep_tree->GetEntry(i);
         if (gPrintEveryNEvents && !(i % gPrintEveryNEvents)) {
-            VLOG("valor_juno", pNOTICE) << "** Reading event: " << i;
+            // Logging can be added here if needed
         }
         if (mcrec && mcrec->event) {
             const TLorentzVector& nuP4 = *(mcrec->event->Probe()->P4());
             E_true = nuP4.Energy();
+            if (E_true > 20.0) continue;
             costh_true = -nuP4.Pz() / E_true;
             int binIndex = -1;
             double bestEnergy = -1;
@@ -267,107 +288,134 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
                     }
                 }
             }
-            double desiredCount = 0.0;
             if (binIndex != -1) {
-                const NormEntry& bestEntry = gNormTable[binIndex];
                 const genie::GHepParticle* neutrino = mcrec->event->Probe();
-                if (neutrino != nullptr) {
-                    nu_pdg = neutrino->Pdg();
-                }
+                nu_pdg = (neutrino ? neutrino->Pdg() : -1);
                 const genie::Interaction* interaction = mcrec->event->Summary();
+                bool currentIsNC = false;
                 if (interaction->ProcInfo().IsWeakCC()) {
                     iscc = 1; isnc = 0;
+                    currentIsNC = false;
                 } else if (interaction->ProcInfo().IsWeakNC()) {
                     iscc = 0; isnc = 1;
+                    currentIsNC = true;
                 }
-                if (isnc == 1) {
-                    desiredCount = bestEntry.nc;
+                std::string category;
+                if (currentIsNC) {
+                    category = "nc";
                 } else if (std::abs(nu_pdg) == 12) {
-                    desiredCount = (nu_pdg > 0) ? bestEntry.nue : bestEntry.nuebar;
+                    category = (nu_pdg > 0) ? "nue" : "nuebar";
                 } else if (std::abs(nu_pdg) == 14) {
-                    desiredCount = (nu_pdg > 0) ? bestEntry.numu : bestEntry.numubar;
-                }
-            }
-            double p = 1.0;
-            if (binIndex != -1 && binCounts[binIndex] > 0) {
-                p = desiredCount / binCounts[binIndex];
-                if (p > 1.0) p = 1.0;
-            }
-            if (randGen.Uniform() < p) {
-                double E_reco = E_true;
-                costh_reco = costh_true;
-                LoE_true = 12742 / E_true;
-                Q2 = mcrec->event->Summary()->Kine().Q2(true);
-                W  = mcrec->event->Summary()->Kine().W(true);
-                
-      
-                const auto& event = *(mcrec->event);
-                valor::conv::ReacMode_t reac_mode = valor::util::DetermineReactionMode(&event, false);
-                reac_mod = reac_mode;
-                modeCounts[reac_mod]++;
-                
- 
-                EventBranchData branchData = ExtractEventBranchData(mcrec->event, false);
-                nP = 0; nN = 0; nPip = 0; nPim = 0; npi0 = 0;
-                nKp = 0; nKm = 0; nK0 = 0; nEM = 0; nOtherHad = 0; nNucleus = 0;
-                for (size_t j = 0; j < branchData.particlePDG.size(); ++j) {
-                    int pdg = branchData.particlePDG[j];
-                    if (pdg == genie::kPdgProton || pdg == genie::kPdgAntiProton)
-                        nP++;
-                    else if (pdg == genie::kPdgNeutron || pdg == genie::kPdgAntiNeutron)
-                        nN++;
-                    else if (pdg == genie::kPdgPiP)
-                        nPip++;
-                    else if (pdg == genie::kPdgPiM)
-                        nPim++;
-                    else if (pdg == genie::kPdgPi0) {
-                        npi0++;  
-                    }
-                    else if (pdg == genie::kPdgKP)
-                        nKp++;
-                    else if (pdg == genie::kPdgKM)
-                        nKm++;
-                    else if (pdg == genie::kPdgK0 || pdg == genie::kPdgAntiK0)
-                        nK0++;
-                    else if (pdg == genie::kPdgGamma || pdg == genie::kPdgElectron || pdg == genie::kPdgPositron)
-                        nEM++;
-                    else if (genie::pdg::IsHadron(pdg))
-                        nOtherHad++;
-                    else if (genie::pdg::IsIon(pdg))
-                        nNucleus++;
-                }
-                isCC_flag         = branchData.is_CC;
-                isNC_flag         = branchData.is_NC;
-                isCharm_flag      = branchData.is_charm;
-                isStrange_flag    = branchData.is_strange;
-                isQE_flag         = branchData.is_QE;
-                isMEC_flag        = branchData.is_MEC;
-                isNuEEl_flag      = branchData.is_NuEEl;
-                isIMD_flag        = branchData.is_IMD;
-                isIMDAnnihilation_flag = branchData.is_IMDanh;
-                isCoherent_flag   = branchData.is_Coherent;
-
-                bool is_nue = (std::abs(nu_pdg) == 12);
-                bool is_antineutrino = (nu_pdg < 0);
-                if (isnc == 1) {
-                    sample_branch = valor::conv::ksJFCAtmoNC;
-                } else if (std::abs(nu_pdg) == 12) {
-                    if (nu_pdg > 0)
-                        sample_branch = valor::conv::ksJFCAtmoNuECC;
-                    else
-                        sample_branch = valor::conv::ksJFCAtmoNuEBarCC;
-                } else if (std::abs(nu_pdg) == 14) {
-                    if (nu_pdg > 0)
-                        sample_branch = valor::conv::ksJFCAtmoNuMuCC;
-                    else
-                        sample_branch = valor::conv::ksJFCAtmoNuMuBarCC;
+                    category = (nu_pdg > 0) ? "numu" : "numubar";
                 } else {
-                    sample_branch = -1; 
+                    category = "unknown";
                 }
-                beam = valor::conv::kbAtmo_Jiangmen;
-                wght = p;
-                outputTree->Fill();
-                savedEvents++;
+                if (category == "unknown") continue;
+
+                const NormEntry& bestEntry = gNormTable[binIndex];
+                double desiredCountDouble = 0.0;
+                if (category == "nc") {
+                    desiredCountDouble = bestEntry.nc;
+                } else if (category == "nue") {
+                    desiredCountDouble = bestEntry.nue;
+                } else if (category == "nuebar") {
+                    desiredCountDouble = bestEntry.nuebar;
+                } else if (category == "numu") {
+                    desiredCountDouble = bestEntry.numu;
+                } else if (category == "numubar") {
+                    desiredCountDouble = bestEntry.numubar;
+                }
+                desiredCountDouble *= 100.0;
+                int targetCount = static_cast<int>(desiredCountDouble + 0.5);
+
+
+                int totalCount = binCategoryCounts[binIndex][category];
+                int processed = binCategoryProcessed[binIndex][category];
+                int accepted = binCategoryAccepted[binIndex][category];
+                int remaining = totalCount - processed;
+                int needed = targetCount - accepted;
+                binCategoryProcessed[binIndex][category] = processed + 1;
+                bool select = false;
+                if (remaining <= needed) {
+                    select = true;
+                } else {
+                    double prob = static_cast<double>(needed) / remaining;
+                    if (randGen.Uniform() < prob) {
+                        select = true;
+                    }
+                }
+                if (select) {
+                    binCategoryAccepted[binIndex][category] = accepted + 1;
+                    E_reco = E_true;
+                    costh_reco = costh_true;
+                    LoE_true = 12742 / E_true;
+                    Q2 = mcrec->event->Summary()->Kine().Q2(true);
+                    W  = mcrec->event->Summary()->Kine().W(true);
+                    const auto& event = *(mcrec->event);
+                    valor::conv::ReacMode_t reac_mode = valor::util::DetermineReactionMode(&event, false);
+                    reac_mod = reac_mode;
+                    modeCounts[reac_mod]++;
+                    EventBranchData branchData = ExtractEventBranchData(mcrec->event, false);
+                    nP = 0; nN = 0; nPip = 0; nPim = 0; npi0 = 0;
+                    nKp = 0; nKm = 0; nK0 = 0; nEM = 0; nOtherHad = 0; nNucleus = 0;
+                    for (size_t j = 0; j < branchData.particlePDG.size(); ++j) {
+                        int pdg = branchData.particlePDG[j];
+                        if (pdg == genie::kPdgProton || pdg == genie::kPdgAntiProton)
+                            nP++;
+                        else if (pdg == genie::kPdgNeutron || pdg == genie::kPdgAntiNeutron)
+                            nN++;
+                        else if (pdg == genie::kPdgPiP)
+                            nPip++;
+                        else if (pdg == genie::kPdgPiM)
+                            nPim++;
+                        else if (pdg == genie::kPdgPi0) {
+                            npi0++;
+                        }
+                        else if (pdg == genie::kPdgKP)
+                            nKp++;
+                        else if (pdg == genie::kPdgKM)
+                            nKm++;
+                        else if (pdg == genie::kPdgK0 || pdg == genie::kPdgAntiK0)
+                            nK0++;
+                        else if (pdg == genie::kPdgGamma || pdg == genie::kPdgElectron || pdg == genie::kPdgPositron)
+                            nEM++;
+                        else if (genie::pdg::IsHadron(pdg))
+                            nOtherHad++;
+                        else if (genie::pdg::IsIon(pdg))
+                            nNucleus++;
+                    }
+                    isCC_flag         = branchData.is_CC;
+                    isNC_flag         = branchData.is_NC;
+                    isCharm_flag      = branchData.is_charm;
+                    isStrange_flag    = branchData.is_strange;
+                    isQE_flag         = branchData.is_QE;
+                    isMEC_flag        = branchData.is_MEC;
+                    isNuEEl_flag      = branchData.is_NuEEl;
+                    isIMD_flag        = branchData.is_IMD;
+                    isIMDAnnihilation_flag = branchData.is_IMDanh;
+                    isCoherent_flag   = branchData.is_Coherent;
+                    bool is_nue = (std::abs(nu_pdg) == 12);
+                    bool is_antineutrino = (nu_pdg < 0);
+                    if (isNC_flag) {
+                        sample_branch = valor::conv::ksJFCAtmoNC;
+                    } else if (std::abs(nu_pdg) == 12) {
+                        if (nu_pdg > 0)
+                            sample_branch = valor::conv::ksJFCAtmoNuECC;
+                        else
+                            sample_branch = valor::conv::ksJFCAtmoNuEBarCC;
+                    } else if (std::abs(nu_pdg) == 14) {
+                        if (nu_pdg > 0)
+                            sample_branch = valor::conv::ksJFCAtmoNuMuCC;
+                        else
+                            sample_branch = valor::conv::ksJFCAtmoNuMuBarCC;
+                    } else {
+                        sample_branch = -1;
+                    }
+                    beam = valor::conv::kbAtmo_Jiangmen;
+                    wght = 1.0;
+                    outputTree->Fill();
+                    savedEvents++;
+                }
             }
         }
     }
@@ -375,7 +423,6 @@ int processEvents(const std::vector<std::string>& inputFiles, const std::string&
     outputTree->Write();
     outputFile->Close();
     delete ghep_tree;
-    VLOG("valor_juno", pNOTICE) << "Done!";
     std::cout << "Total saved events: " << savedEvents << std::endl;
 
     std::cout << "Reaction Mode Event Counts:" << std::endl;

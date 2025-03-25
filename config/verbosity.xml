@@ -23,10 +23,10 @@
   <priority msgstream="HACK">         FATAL    </priority>
   
   <priority msgstream="Minuit">                          DEBUG </priority>
-  <priority msgstream="Minuit2">                          INFO </priority>
+  <priority msgstream="Minuit2">                         DEBUG </priority>
   <priority msgstream="CompoundFitElements">             DEBUG </priority>
-  <priority msgstream="CompoundFitModel">                DEBUG </priority>
-  <priority msgstream="CompoundFitData">                 DEBUG </priority>
+  <priority msgstream="CompoundFitModel">                ERROR </priority>
+  <priority msgstream="CompoundFitData">                 ERROR </priority>
   <priority msgstream="CorrelatedSystematics">          NOTICE </priority>
   <priority msgstream="CompoundCorrelatedSystematics">  NOTICE </priority>
   <priority msgstream="GenericSingleSampleFitModel">     ERROR  </priority>
