@@ -66,9 +66,11 @@
 
 // memory tracking
 #include "TObjectTable.h"
+#include <filesystem>
 
 using namespace genie;
 using namespace valor;
+namespace fs = std::filesystem;
 
 // A struct to let one read the normalisation table
 struct NormEntry {
@@ -326,7 +328,7 @@ int processEvents( const std::vector<std::string> & inputFiles,const std::vector
 
   for (unsigned int im = 0 ; im < nev_accept_by_mode.size(); im++) {
     valor::conv::ReacMode_t m = (valor::conv::ReacMode_t)im;
-    if(nev_accept_by_mode[im] > 0) VLOG("valor_sbn", pNOTICE) << "Selected "<<nev_accept_by_mode[im]<<" events of mode "<<valor::util::AsString(m);
+    if(nev_accept_by_mode[im] > 0) VLOG("valor_juno", pNOTICE) << "Selected "<<nev_accept_by_mode[im]<<" events of mode "<<valor::util::AsString(m);
   }
 
   double f = 100. * (double)savedEvents / (double)nentries;
@@ -379,7 +381,15 @@ int main(int argc, char** argv) {
   string arg_input_directory             = arg.GetString("input-directory");
   string arg_output                      = arg.GetString("output");
   string arg_input_beam                  = arg.GetString("beam");
-  std::vector<string>  arg_input_samples = arg.GetStringVec("samples");
+  string sample_str                      = arg.GetString("samples");
+  std::vector<string> arg_input_samples;
+  std::stringstream ss(sample_str);
+  string tmp_sample;
+
+  while (std::getline(ss, tmp_sample, ',')) {
+    arg_input_samples.push_back(tmp_sample);
+  }
+
 
   std::string thresholds = util::CompleteConfigPath(arg.GetString("mesg-thresholds"));
   valor::Messenger::Instance()->Configure(thresholds);
@@ -408,14 +418,14 @@ int main(int argc, char** argv) {
   assert(inputBeam != conv::kbUndefined);
 
   std::vector<std::string> inputFiles;
-  for( const auto& entry : std::filesystem::recursive_directory_iterator(arg_input_directory) ) {
-    if( entry.is_regular_file() && entry.path().extension() == ".root" )
-      inputFiles.emplace_back( entry.path() );
+  for (const auto& entry : fs::recursive_directory_iterator(arg_input_directory)) {
+    if (entry.is_regular_file() && entry.path().extension() == ".root")
+        inputFiles.emplace_back(entry.path().string());
   }
 
   processEvents(inputFiles, inputSamples, inputBeam, arg_output);
 
-  VLOG("valor_sbn", pNOTICE)  << "Done!";
+  VLOG("valor_juno", pNOTICE)  << "Done!";
 
   time_t endrawtime;
   struct tm * endtimeinfo;
