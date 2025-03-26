@@ -16,6 +16,7 @@ JUNO_LIBRARIES =
 
 TGT = make_dst \
       make_response \
+	  make_MH_dst \
 
 
 all: $(TGT)
@@ -32,6 +33,20 @@ endif
 else
 	@echo "Skipping make_valortree due to no JUNOanalysis"
 endif
+
+# Generate DSTs for JUNOCode fit
+make_MH_dst: FORCE
+ifeq ($(JUNOANALYSIS_ENABLED),0)
+ifdef GENIE
+	$(CXX) $(CXXFLAGS) -c make_MH_dst.cxx $(GINCLUDES)
+	$(LD) $(LDFLAGS) make_MH_dst.o $(GLIBRARIES) $(VALOR_GLIBRARIES) -lstdc++ -o $(VALOR_EXPT)/bin/valor-juno_make_MH_dst
+else
+	@echo "Skipping make_valortree due to no GENIE"
+endif
+else
+	@echo "Skipping make_valortree due to no JUNOanalysis"
+endif
+
 
 # Generate response DSTs for JUNOCode fit
 make_response: FORCE
