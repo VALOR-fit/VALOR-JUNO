@@ -1,27 +1,15 @@
 valor-run_fit \
-   --config /sps/juno/ycao/VALOR/softw/JUNO/vmaster/config/analysis/juno_test_analysis_2024.xml \
-   --physics-hypothesis 3f_osc \
+   --config /sps/juno/ycao/VALOR/softw/JUNO/vmaster/config/analysis/Atmo_Juno_nuebar_2d.xml \
+   --config-datasetB /sps/juno/ycao/VALOR/softw/JUNO/vmaster/config/analysis/Atmo_Juno_nuebar_2d_NO.xml \
+   --physics-hypothesis void \
    --param-values-option prefit-errors \
-   --osc-prior-file priors/3Fosc_priors.xml \
+   --osc-prior-file priors/void.xml \
    --load-prior-from-file - \
    --fitter minuit+with_simplex_fallback \
    --mesg-thresholds verbosity.xml \
-   --without-stat-fluct \
-   --tag juno_test \
+   --without-stat-fluct  \
+   --tag numu_test_NO \
    --run 1 \
    --ntoymc 1 \
-   --input-mixing12 0.3 \
-   --fix-at-mixing12 0.3 \
-   --fix-mixing12 \
-   --input-mixing13 0.022 \
-   --input-mixing23 0.5 \
-   --fix-at-mixing23 0.5 \
-   --fix-mixing23 \
-   --input-cpv 0.0 \
-   --fix-cpv \
-   --input-dm12sq 7.5e-5 \
-   --fix-at-dm12sq 7.5e-5 \
-   --fix-dm12sq \
-   --input-dm23sq 2.45e-3 \
-   --fix-at-dm23sq 2.45e-3 \
-   --fix-dm23sq 
+
+ 
