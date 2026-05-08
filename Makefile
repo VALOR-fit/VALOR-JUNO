@@ -49,7 +49,10 @@ copy-scripts-to-bin: | make-bin-lib-dir FORCE
 #	@echo "** GENIE not set up - skipping Testing"
 #endif
 
-build-libs: make-bin-lib-dir copy-scripts-to-bin 
+build-libs: make-bin-lib-dir copy-scripts-to-bin FORCE
+	@echo " "
+	@echo "** Building JUNO libraries..."
+	$(MAKE) -C ${VALOR_EXPT_TOPDIR}/src/juno/Fit; 
 
 build-apps: make-bin-lib-dir build-libs copy-scripts-to-bin FORCE
 	@echo " "
@@ -71,6 +74,7 @@ make-bin-lib-dir: FORCE
 purge: FORCE
 	@echo " "
 	@echo "** Purging..."
+	$(MAKE) -C src/juno/Fit     purge
 	$(MAKE) -C src/juno/Apps    purge 
 
 clean: clean-files clean-dir clean-etc
@@ -83,16 +87,17 @@ clean-files: FORCE
 	rm -f ${VALOR_EXPT_TOPDIR}/bin/valor_expt-config; \
 	rm -f ${VALOR_EXPT_TOPDIR}/bin/pyvalor; \
 	rm -f ${VALOR_EXPT_TOPDIR}/bin/valor; \
+	$(MAKE) -C src/juno/Fit     clean; \
 	$(MAKE) -C src/juno/Apps    clean; \
 	rm -f ${VALOR_EXPT_TOPDIR}/src/juno/Conventions/Build.h; \
 	rm -f ${VALOR_EXPT_TOPDIR}/src/juno/Conventions/Version.h; \
 	cd $(VALOR_EXPT_TOPDIR);
 
 clean-dir: FORCE
-	@echo "Deleting VALOR/JUNO lib and bin directories...";\
-	cd $(VALOR_EXPT_TOPDIR);\
-	[ ! -d ./bin ] || rmdir ./bin;\
-	[ ! -d ./lib ] || rmdir ./lib;\
+	@echo "Deleting VALOR/JUNO lib and bin directories..."; \
+	cd $(VALOR_EXPT_TOPDIR); \
+	[ ! -d ./bin ] || rmdir ./bin; \
+	[ ! -d ./lib ] || rmdir ./lib; \
 	[ ! -d ./src/juno/Conventions ] || rmdir ./src/juno/Conventions
 
 force-clean-dir: FORCE
