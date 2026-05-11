@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<valor>
+  <element_list name="Atmo_Juno_4cc_fc_2d_detresp_nooscPred_noData_fineDST">
+
+    <element name="Atmo_numuCC_fc">
+      <detector>     juno                                                   </detector>
+      <beam>         juno                                                   </beam>
+      <sample>       numuCC_fc                                              </sample>
+      <observable>   Ereco,Thetareco                                        </observable>
+      <mc>           mc/AtmoJuno_detresp_numuCC_fc_model_NOOSC_fineDST.xml   </mc>
+      <data>         mc/AtmoJuno_detresp_numuCC_fc_data_NO_fineDST.xml    </data>
+      <data_class>   valor::GenericSingleSampleFitData                      </data_class>
+      <model_class>  valor::GenericSingleSampleFitModel                     </model_class>
+      <binning>      binning/juno_proposal_binning_2D.xml                   </binning>
+    </element>
+
+    <element name="Atmo_numubarCC_fc">
+      <detector>     juno                                                     </detector>
+      <beam>         juno                                                     </beam>
+      <sample>       numubarCC_fc                                             </sample>
+      <observable>   Ereco,Thetareco                                          </observable>
+      <mc>           mc/AtmoJuno_detresp_numubarCC_fc_model_NOOSC_fineDST.xml </mc>
+      <data>         mc/AtmoJuno_detresp_numubarCC_fc_data_NO_fineDST.xml  </data>
+      <data_class>   valor::GenericSingleSampleFitData                        </data_class>
+      <model_class>  valor::GenericSingleSampleFitModel                       </model_class>
+      <binning>      binning/juno_proposal_binning_2D.xml                     </binning>
+    </element>
+
+    <element name="Atmo_nueCC_fc">
+      <detector>     juno                                                  </detector>
+      <beam>         juno                                                  </beam>
+      <sample>       nueCC_fc                                              </sample>
+      <observable>   Ereco,Thetareco                                       </observable>
+      <mc>           mc/AtmoJuno_detresp_nueCC_fc_model_NOOSC_fineDST.xml   </mc>
+      <data>         mc/AtmoJuno_detresp_nueCC_fc_data_NO_fineDST.xml    </data>
+      <data_class>   valor::GenericSingleSampleFitData                     </data_class>
+      <model_class>  valor::GenericSingleSampleFitModel                    </model_class>
+      <binning>      binning/juno_proposal_binning_2D.xml                  </binning>
+    </element>
+
+    <element name="Atmo_nuebarCC_fc">
+      <detector>     juno                                                    </detector>
+      <beam>         juno                                                    </beam>
+      <sample>       nuebarCC_fc                                             </sample>
+      <observable>   Ereco,Thetareco                                         </observable>
+      <mc>           mc/AtmoJuno_detresp_nuebarCC_fc_model_NOOSC_fineDST.xml </mc>
+      <data>         mc/AtmoJuno_detresp_nuebarCC_fc_data_NO_fineDST.xml  </data>
+      <data_class>   valor::GenericSingleSampleFitData                       </data_class>
+      <model_class>  valor::GenericSingleSampleFitModel                      </model_class>
+      <binning>      binning/juno_proposal_binning_2D.xml                    </binning>
+    </element>
+  </element_list>
+
+  <parameter_definitions>
+    <filename desc="juno_osc_parameters"> params/flux_3fosc.xml </filename>
+  </parameter_definitions>
+</valor>

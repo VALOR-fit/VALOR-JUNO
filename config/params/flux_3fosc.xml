@@ -25,12 +25,12 @@
       <simple> dm12sq </simple>
     </name>
     <type> special </type>
-    <limits> 7.4e-5, 7.6e-5 </limits>
+    <limits> 0.0, 1.0 </limits>
     <range_mode> value </range_mode>
-    <range> 7.4e-5, 7.6e-5 </range>
+    <range> 6.63e-5, 8.43e-5 </range>
     <step_mode> value </step_mode>
-    <step> 2e-06 </step>
-    <init> 7.4e-5 </init>
+    <step> 2e-07 </step>
+    <init> 6.99e-5 </init>
   </param>
 
   <param>
@@ -38,11 +38,11 @@
       <simple> dm23sq </simple>
     </name>
     <type> special </type>
-    <limits> 2.4e-3, 2.5e-3 </limits>
+    <limits> 0.0, 1.0 </limits>
     <range_mode> value </range_mode>
-    <range> 2.4e-3, 2.5e-3 </range>
+    <range> 2.315e-3, 2.595e-3 </range>
     <step_mode> value </step_mode>
-    <step> 0.0001 </step>
+    <step> 1e-6 </step>
     <init> 2.4e-3 </init>
   </param>
 
@@ -51,11 +51,11 @@
       <simple> mixing12 </simple>
     </name>
     <type> special </type>
-    <limits> 0.29, 0.31 </limits>
+    <limits> 0.0, 1.0 </limits>
     <range_mode> value </range_mode>
-    <range> 0.29, 0.31 </range>
+    <range> 0.247, 0.372 </range>
     <step_mode> value </step_mode>
-    <step> 0.01 </step>
+    <step> 0.001 </step>
     <init> 0.29 </init>
   </param>
 
@@ -64,12 +64,12 @@
       <simple> mixing13 </simple>
     </name>
     <type> special </type>
-    <limits> 0.021, 0.023 </limits>
+    <limits> 0.0, 1.0 </limits>
     <range_mode> value </range_mode>
-    <range> 0.021, 0.023 </range>
+    <range> 0.0184, 0.0254 </range>
     <step_mode> value </step_mode>
-    <step> 0.001 </step>
-    <init> 0.021 </init>
+    <step> 0.0001 </step>
+    <init> 0.02 </init>
   </param>
 
   <param>
@@ -77,12 +77,12 @@
       <simple> mixing23 </simple>
     </name>
     <type> special </type>
-    <limits> 0.4, 0.6 </limits>
+    <limits> 0.0, 1.0 </limits>
     <range_mode> value </range_mode>
-    <range> 0.4, 0.6 </range>
+    <range> 0.453, 0.633 </range>
     <step_mode> value </step_mode>
-    <step> 0.005 </step>
-    <init> 0.4 </init>
+    <step> 0.002 </step>
+    <init> 0.5 </init>
   </param>
 
   <param>
@@ -90,12 +90,13 @@
       <simple> cpv </simple>
     </name>
     <type> special </type>
-    <limits> -3.1416, 3.1416 </limits>
+    <limits> -10.0, 10.0 </limits>
     <range_mode> value </range_mode>
-    <range> -3.1416, 3.1416 </range>
+    <range> 0.0, 6.29 </range>
     <step_mode> value </step_mode>
     <step> 0.01 </step>
-    <init> -0.1 </init>
+    <init> 1.853 </init>
   </param>
 
 </param_list>
+

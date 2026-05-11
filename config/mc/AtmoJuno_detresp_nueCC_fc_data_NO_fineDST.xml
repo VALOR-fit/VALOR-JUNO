@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<analysis_inputs analysis="JUNO_Atmo_Fit" version="detresp_nueCC_fc_data_NO" detector="juno">
+  <data>
+    <using_dst_format> true </using_dst_format>
+    <using_varray_format> false </using_varray_format>
+    <using_hist_format> false </using_hist_format>
+    <dst>
+      <juno>
+        <filename> valor_juno_grid_dst_IO.root </filename>
+        <objname>  valor_dst </objname>
+        <objtype>  TTree </objtype>
+      </juno>
+    </dst>
+  </data>
+</analysis_inputs>

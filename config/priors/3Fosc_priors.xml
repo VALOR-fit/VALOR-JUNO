@@ -13,8 +13,8 @@
     
     <params> mixing12 </params>
     <type> flat </type>
-    <low> 0.29 </low>
-    <high> 0.31 </high>
+    <low> 0.20 </low>
+    <high> 0.35 </high>
     <scheme> Sinsq2Theta </scheme>
 
     <params> mixing13 </params>

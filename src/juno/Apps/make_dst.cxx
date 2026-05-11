@@ -15,8 +15,8 @@
            University of Liverpool
 
            Yaoqi Cao <yqc23phd \at gmail.com>
-	   Ziou He <zh316 \at cantab.ac.uk>
-	   University of Warwick and Chinese Academy of Sciences
+	         Ziou He <zh316 \at cantab.ac.uk>
+	         University of Warwick and University of Liverpool
 
 \created   March 12, 2025
 
@@ -418,7 +418,7 @@ int main(int argc, char** argv) {
 
   processEvents(inputFiles, inputSamples, inputBeam, arg_output);
 
-  VLOG("valor_sbn", pNOTICE)  << "Done!";
+  VLOG("valor_juno", pNOTICE)  << "Done!";
 
   time_t endrawtime;
   struct tm * endtimeinfo;

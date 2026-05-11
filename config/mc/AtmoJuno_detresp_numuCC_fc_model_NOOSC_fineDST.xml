@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<analysis_inputs
+  analysis="JUNO_Atmo_Fit"
+  version="detresp_numuCC_fc_model_NOOSC_fineDST"
+  detector="juno">
+
+  <data>
+    <exposure>
+      <juno> 1 </juno>
+    </exposure>
+  </data>
+
+  <fiducial_mass> 1 </fiducial_mass>
+
+  <force_apply_osc_prob_to_all_detectors>
+    true
+  </force_apply_osc_prob_to_all_detectors>
+
+  <use_earth_oscillation>
+    true
+  </use_earth_oscillation>
+
+  <!-- ===================================================== -->
+  <!-- JUNO detector response configuration                  -->
+  <!-- ===================================================== -->
+
+  <detector_response>
+
+    <enabled>
+      false
+    </enabled>
+
+    <!-- FC ratio -->
+    <apply_fc>
+      false
+    </apply_fc>
+
+    <fc_coeff_dir>
+      data/input/fc_ratio/Total_FC_V2
+    </fc_coeff_dir>
+
+    <!-- Energy smearing -->
+    <apply_energy_smearing>
+      true
+    </apply_energy_smearing>
+
+    <!-- cos(theta) smearing -->
+    <apply_costh_smearing>
+      true
+    </apply_costh_smearing>
+
+    <!-- PID confusion -->
+    <apply_pid>
+      false
+    </apply_pid>
+
+    <pid_matrix_file>
+      data/input/detector_response/pid_matrices_8bin_from_user.csv
+    </pid_matrix_file>
+
+    <!-- Gaussian truncation -->
+    <smear_nsigma>
+      5.0
+    </smear_nsigma>
+
+    <!-- Allow events to leak outside reco range -->
+    <preserve_normalization>
+      false
+    </preserve_normalization>
+
+  </detector_response>
+
+  <!-- ===================================================== -->
+  <!-- True-space NOOSC fine DST                             -->
+  <!-- ===================================================== -->
+
+  <mc>
+
+    <using_dst_format>
+      true
+    </using_dst_format>
+
+    <dst>
+      <juno>
+        <filename>
+          valor_juno_fine_dst_NOOSC_wCross.root
+        </filename>
+
+        <objname>
+          valor_dst
+        </objname>
+
+        <objtype>
+          TTree
+        </objtype>
+      </juno>
+    </dst>
+
+    <interaction_mass>
+      -1
+    </interaction_mass>
+
+  </mc>
+
+  <!-- ===================================================== -->
+  <!-- Oscillation mode lists                                -->
+  <!-- ===================================================== -->
+
+  <modelist>
+    modelists/fine/JUNO_OscLowE_numuCC_fc_summed_min.xml
+  </modelist>
+
+  <coarse_modelist>
+    modelists/coarse/coarse_mode_list_JUNO_numuCCincl.xml
+  </coarse_modelist>
+
+  <default_binning>
+    binning/juno_proposal_binning_2D.xml
+  </default_binning>
+
+</analysis_inputs>
