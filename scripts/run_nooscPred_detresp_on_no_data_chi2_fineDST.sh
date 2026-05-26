@@ -7,14 +7,14 @@ if [[ -z "${VALOR_EXPT:-}" ]]; then
 fi
 
 TAG="${TAG:-nooscPred_earthosc_NO_on_no_data_fineDST_detresp}"
-RUN="${RUN:-1}"
+RUN="${RUN:-20260522_test}"
 
 CFG="${CFG:-${VALOR_EXPT}/config/analysis/Atmo_Juno_4cc_fc_2d_detresp_nooscPred_noData_fineDST.xml}"
 
 FC_COEFF_DIR="${FC_COEFF_DIR:-${VALOR_EXPT}/data/input/fc_ratio/Total_FC_V2}"
 PID_MATRIX_FILE="${PID_MATRIX_FILE:-${VALOR_EXPT}/data/input/detector_response/pid_matrices_8bin_from_user.csv}"
 
-LOG="/tmp/${TAG}_${RUN}.log"
+LOG="/scratchfs/juno/heziou/VALOR/softw/JUNO/vmaster/logs/${TAG}_${RUN}.log"
 
 INPUT_MIXING12="${INPUT_MIXING12:-0.307}"
 INPUT_MIXING13="${INPUT_MIXING13:-0.0219}"
@@ -52,6 +52,8 @@ echo "[INFO] Config: ${CFG}"
 echo "[INFO] FC coeff dir: ${FC_COEFF_DIR}"
 echo "[INFO] PID matrix: ${PID_MATRIX_FILE}"
 echo "[INFO] Log: ${LOG}"
+
+export LD_LIBRARY_PATH="${VALOR_EXPT}/lib:${LD_LIBRARY_PATH:-}"
 
 set +e
 valor-run_fit \

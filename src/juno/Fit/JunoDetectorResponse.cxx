@@ -36,7 +36,6 @@ std::vector<std::string> Split(const std::string& s, char delim) {
 } // namespace
 
 JunoDetectorResponse::JunoDetectorResponse() {
-  // JUNO proposal analysis binning used by current scripts.
   fEnergyEdges = {
     1.08508435, 1.41421357, 1.84317469, 2.40224887, 3.13090217,
     4.08057156, 5.31829591, 6.93144844, 9.03390453, 11.77408038, 20.0
@@ -56,12 +55,17 @@ JunoDetectorResponse::JunoDetectorResponse() {
 JunoDetectorResponse::~JunoDetectorResponse() = default;
 
 void JunoDetectorResponse::SetConfig(const Config& cfg) { fConfig = cfg; }
-const JunoDetectorResponse::Config& JunoDetectorResponse::GetConfig() const { return fConfig; }
 
-void JunoDetectorResponse::SetAnalysisBinning(const std::vector<double>& e_edges,
-                                               const std::vector<double>& costh_edges) {
+const JunoDetectorResponse::Config& JunoDetectorResponse::GetConfig() const {
+  return fConfig;
+}
+
+void JunoDetectorResponse::SetAnalysisBinning(
+    const std::vector<double>& e_edges,
+    const std::vector<double>& costh_edges) {
   if (e_edges.size() < 2 || costh_edges.size() < 2) {
-    throw std::runtime_error("JunoDetectorResponse::SetAnalysisBinning: need at least 2 edges per axis");
+    throw std::runtime_error(
+        "JunoDetectorResponse::SetAnalysisBinning: need at least 2 edges per axis");
   }
   fEnergyEdges = e_edges;
   fCosthEdges = costh_edges;
@@ -70,7 +74,8 @@ void JunoDetectorResponse::SetAnalysisBinning(const std::vector<double>& e_edges
 bool JunoDetectorResponse::LoadFCCoefficientsText(const std::string& filename) {
   std::ifstream in(filename.c_str());
   if (!in.is_open()) {
-    std::cerr << "JunoDetectorResponse: cannot open FC coefficient file: " << filename << std::endl;
+    std::cerr << "JunoDetectorResponse: cannot open FC coefficient file: "
+              << filename << std::endl;
     return false;
   }
 
@@ -92,7 +97,8 @@ bool JunoDetectorResponse::LoadFCCoefficientsText(const std::string& filename) {
     try {
       SetFCCoefficients(FlavorFromString(key), coeffs);
     } catch (...) {
-      std::cerr << "JunoDetectorResponse: unknown FC flavor key: " << key << std::endl;
+      std::cerr << "JunoDetectorResponse: unknown FC flavor key: "
+                << key << std::endl;
       return false;
     }
   }
@@ -100,14 +106,17 @@ bool JunoDetectorResponse::LoadFCCoefficientsText(const std::string& filename) {
   return true;
 }
 
-void JunoDetectorResponse::SetFCCoefficients(Flavor flavor, const std::vector<double>& coeffs) {
+void JunoDetectorResponse::SetFCCoefficients(
+    Flavor flavor,
+    const std::vector<double>& coeffs) {
   fFCCoeffs[flavor] = coeffs;
 }
 
 bool JunoDetectorResponse::LoadPIDMatrixCSV(const std::string& filename) {
   std::ifstream in(filename.c_str());
   if (!in.is_open()) {
-    std::cerr << "JunoDetectorResponse: cannot open PID matrix CSV: " << filename << std::endl;
+    std::cerr << "JunoDetectorResponse: cannot open PID matrix CSV: "
+              << filename << std::endl;
     return false;
   }
 
@@ -132,13 +141,15 @@ bool JunoDetectorResponse::LoadPIDMatrixCSV(const std::string& filename) {
     if (group < 1 || group > 8 || true_label < 0 || true_label > 4) continue;
 
     for (int reco_label = 0; reco_label < 5; ++reco_label) {
-      fPIDMatrices[group - 1][true_label][reco_label] = std::atof(cols[2 + reco_label].c_str());
+      fPIDMatrices[group - 1][true_label][reco_label] =
+          std::atof(cols[2 + reco_label].c_str());
     }
     ++n_loaded;
   }
 
   if (n_loaded <= 0) {
-    std::cerr << "JunoDetectorResponse: PID matrix CSV contained no usable rows" << std::endl;
+    std::cerr << "JunoDetectorResponse: PID matrix CSV contained no usable rows"
+              << std::endl;
     return false;
   }
 
@@ -147,7 +158,8 @@ bool JunoDetectorResponse::LoadPIDMatrixCSV(const std::string& filename) {
   return true;
 }
 
-void JunoDetectorResponse::SetSinglePIDMatrix(const std::array<std::array<double, 5>, 5>& matrix) {
+void JunoDetectorResponse::SetSinglePIDMatrix(
+    const std::array<std::array<double, 5>, 5>& matrix) {
   for (auto& mat : fPIDMatrices) mat = matrix;
   fHavePID = true;
   fUseSinglePID = true;
@@ -160,26 +172,31 @@ JunoDetectorResponse::Apply(const std::vector<Component>& components) const {
   return output;
 }
 
-bool JunoDetectorResponse::ApplyInto(const std::vector<Component>& components, HistMap& output) const {
+bool JunoDetectorResponse::ApplyInto(
+    const std::vector<Component>& components,
+    HistMap& output) const {
   if (fEnergyEdges.size() < 2 || fCosthEdges.size() < 2) {
     std::cerr << "JunoDetectorResponse: analysis binning is invalid" << std::endl;
     return false;
   }
 
   if (fConfig.apply_pid && !fHavePID) {
-    std::cerr << "JunoDetectorResponse: apply_pid requested but no PID matrix loaded" << std::endl;
+    std::cerr << "JunoDetectorResponse: apply_pid requested but no PID matrix loaded"
+              << std::endl;
     return false;
   }
 
   for (const Component& comp : components) {
     if (!comp.true_spectrum) continue;
+
     const TH2D* htrue = comp.true_spectrum;
     const int nETrue = htrue->GetNbinsX();
     const int nCTrue = htrue->GetNbinsY();
 
     for (int ie = 1; ie <= nETrue; ++ie) {
       const double etrue = htrue->GetXaxis()->GetBinCenter(ie);
-      const std::vector<std::pair<int, double> > e_probs = EnergyRecoProbs(etrue, comp.final_flavor);
+      const std::vector<std::pair<int, double> > e_probs =
+          EnergyRecoProbs(etrue, comp.final_flavor);
       if (e_probs.empty()) continue;
 
       for (int ic = 1; ic <= nCTrue; ++ic) {
@@ -190,7 +207,8 @@ bool JunoDetectorResponse::ApplyInto(const std::vector<Component>& components, H
         if (fConfig.apply_fc) rate *= EvalFC(comp.final_flavor, etrue);
         if (rate <= 0.0) continue;
 
-        const std::vector<std::pair<int, double> > c_probs = CosthRecoProbs(costh_true, etrue);
+        const std::vector<std::pair<int, double> > c_probs =
+            CosthRecoProbs(costh_true, etrue);
         if (c_probs.empty()) continue;
 
         for (const auto& ep : e_probs) {
@@ -215,6 +233,7 @@ bool JunoDetectorResponse::ApplyInto(const std::vector<Component>& components, H
 
             const int true_label = TrueLabel(comp.final_flavor);
             const int group = fUseSinglePID ? 0 : PIDGroupFromRecoEnergy(ereco);
+
             for (int reco_label = 0; reco_label < 5; ++reco_label) {
               const double pid_prob = fPIDMatrices[group][true_label][reco_label];
               if (pid_prob <= 0.0) continue;
@@ -233,7 +252,8 @@ bool JunoDetectorResponse::ApplyInto(const std::vector<Component>& components, H
   return true;
 }
 
-JunoDetectorResponse::Flavor JunoDetectorResponse::FlavorFromString(const std::string& s) {
+JunoDetectorResponse::Flavor
+JunoDetectorResponse::FlavorFromString(const std::string& s) {
   const std::string x = Trim(s);
   if (x == "nue" || x == "NuE") return Flavor::kNuE;
   if (x == "numu" || x == "NuMu") return Flavor::kNuMu;
@@ -245,11 +265,11 @@ JunoDetectorResponse::Flavor JunoDetectorResponse::FlavorFromString(const std::s
 
 int JunoDetectorResponse::TrueLabel(Flavor flavor) {
   switch (flavor) {
-    case Flavor::kNuE:    return 0;
-    case Flavor::kNuMu:   return 1;
-    case Flavor::kNuEBar: return 2;
-    case Flavor::kNuMuBar:return 3;
-    case Flavor::kNC:     return 4;
+    case Flavor::kNuE:     return 0;
+    case Flavor::kNuMu:    return 1;
+    case Flavor::kNuEBar:  return 2;
+    case Flavor::kNuMuBar: return 3;
+    case Flavor::kNC:      return 4;
   }
   return 4;
 }
@@ -259,7 +279,7 @@ int JunoDetectorResponse::SampleFromRecoLabel(int reco_label) {
   if (reco_label == 1) return 50; // numuCC_fc
   if (reco_label == 2) return 53; // nuebarCC_fc
   if (reco_label == 3) return 51; // numubarCC_fc
-  return -1; // NC ignored in 4CC setup
+  return -1; // NC ignored in current 4CC setup
 }
 
 const char* JunoDetectorResponse::FlavorName(Flavor flavor) {
@@ -276,12 +296,17 @@ const char* JunoDetectorResponse::FlavorName(Flavor flavor) {
 double JunoDetectorResponse::EvalFC(Flavor flavor, double energy) const {
   const auto it = fFCCoeffs.find(flavor);
   if (it == fFCCoeffs.end() || it->second.empty()) return 1.0;
+
   double v = EvalPoly(it->second, energy);
   if (v < 0.0) v = 0.0;
+  if (v > 1.0) v = 1.0;
   return v;
 }
 
-double JunoDetectorResponse::EvalPoly(const std::vector<double>& coeffs, double x) const {
+double JunoDetectorResponse::EvalPoly(
+    const std::vector<double>& coeffs,
+    double x) const {
+  if (coeffs.empty()) return 1.0;
   double y = 0.0;
   for (double a : coeffs) y = y * x + a;
   return y;
@@ -312,7 +337,11 @@ double JunoDetectorResponse::SigmaThetaDeg(double energy) const {
   return 0.593 + 1.040 * std::sqrt(e) + 26.175 / e - 0.140 * e;
 }
 
-double JunoDetectorResponse::GaussianBinProb(double low, double high, double mean, double sigma) const {
+double JunoDetectorResponse::GaussianBinProb(
+    double low,
+    double high,
+    double mean,
+    double sigma) const {
   if (sigma <= 0.0) return 0.0;
   const double z1 = (low - mean) / (kSqrt2 * sigma);
   const double z2 = (high - mean) / (kSqrt2 * sigma);
@@ -324,7 +353,7 @@ int JunoDetectorResponse::FindBin(const std::vector<double>& edges, double x) co
   for (int i = 1; i <= nbins; ++i) {
     if (x >= edges[i - 1] && x < edges[i]) return i;
   }
-  if (x == edges[nbins]) return nbins;
+  if (nbins >= 1 && x == edges[nbins]) return nbins;
   return -1;
 }
 
@@ -338,8 +367,6 @@ int JunoDetectorResponse::PIDGroupFromRecoEnergy(double ereco) const {
     }
   }
 
-  // Same mapping as current build_smear_from_maps.sh:
-  // reco analysis bins 1-3 -> group 1, bin 4 -> group 2, ..., bin 10 -> group 8.
   if (ebin <= 2) return 0;
   if (ebin == 3) return 1;
   if (ebin == 4) return 2;
@@ -397,8 +424,10 @@ JunoDetectorResponse::CosthRecoProbs(double costh_true, double etrue) const {
 
   const double c = std::max(-1.0, std::min(1.0, costh_true));
   const double theta = std::acos(c);
-  const double sigma_theta_rad = std::max(1.0e-6, SigmaThetaDeg(etrue)) * kPi / 180.0;
-  const double sigma_c = std::max(1.0e-6, std::abs(std::sin(theta)) * sigma_theta_rad);
+  const double sigma_theta_rad =
+      std::max(1.0e-6, SigmaThetaDeg(etrue)) * kPi / 180.0;
+  const double sigma_c =
+      std::max(1.0e-6, std::abs(std::sin(theta)) * sigma_theta_rad);
   const double mean = c;
   double norm = 0.0;
 
@@ -423,16 +452,21 @@ JunoDetectorResponse::CosthRecoProbs(double costh_true, double etrue) const {
   return probs;
 }
 
-TH2D* JunoDetectorResponse::EnsureHist(HistMap& output, int sample, int reac_mode) const {
+TH2D* JunoDetectorResponse::EnsureHist(
+    HistMap& output,
+    int sample,
+    int reac_mode) const {
   const HistKey key(sample, reac_mode);
   auto it = output.find(key);
   if (it != output.end()) return it->second;
 
   TString name = TString::Format("h2_sample%d_mode%d", sample, reac_mode);
-  TString title = TString::Format("sample %d mode %d;E_{reco};cos#theta_{reco}", sample, reac_mode);
+  TString title = TString::Format(
+      "sample %d mode %d;E_{reco};cos#theta_{reco}", sample, reac_mode);
+
   TH2D* h = new TH2D(name, title,
-                    static_cast<int>(fEnergyEdges.size()) - 1, &fEnergyEdges[0],
-                    static_cast<int>(fCosthEdges.size()) - 1, &fCosthEdges[0]);
+                     static_cast<int>(fEnergyEdges.size()) - 1, &fEnergyEdges[0],
+                     static_cast<int>(fCosthEdges.size()) - 1, &fCosthEdges[0]);
   h->SetDirectory(nullptr);
   output[key] = h;
   return h;

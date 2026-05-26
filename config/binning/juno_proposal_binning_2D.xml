@@ -12,13 +12,13 @@
     binning/reco/valor_juno_binning_2D.xml
   </reco_simple>
 
-  <!-- Single edge-to-edge binning scheme for true quantities.
-       Used both for optimized and simple templates -->
+  <!-- Fine true-space binning for event-rate / oscillation handling.
+       Reco fit binning remains coarse and independent. -->
   <true_simple>
     <!-- Applies to all modes unless a mode binning scheme
          is specified explicitly below -->
     <default>
-      binning/true/juno_2D_binning.xml
+      binning/true/juno_2D_binning_fine_400x400.xml
     </default>
 
   </true_simple>
@@ -31,7 +31,7 @@
     <!-- Applies to all modes unless a mode binning scheme
          is specified explicitly below -->
     <default>
-      binning/true/juno_2D_binning.xml
+      binning/true/juno_2D_binning_fine_400x400.xml
     </default>
   </xsec_true>
 
