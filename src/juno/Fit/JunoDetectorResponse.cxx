@@ -106,6 +106,67 @@ bool JunoDetectorResponse::LoadFCCoefficientsText(const std::string& filename) {
   return true;
 }
 
+bool JunoDetectorResponse::LoadFCCoefficientsText(
+    const std::string& filename,
+    Flavor flavor)
+{
+  std::ifstream in(filename.c_str());
+
+  if (!in.is_open()) {
+    std::cerr
+      << "JunoDetectorResponse: cannot open FC coefficient file: "
+      << filename
+      << std::endl;
+    return false;
+  }
+
+  std::vector<double> coeffs;
+  std::string line;
+
+  while (std::getline(in, line)) {
+    line = Trim(line);
+
+    if (line.empty()) {
+      continue;
+    }
+
+    if (line[0] == '#') {
+      continue;
+    }
+
+    // Accept comma-separated or whitespace-separated coefficients.
+    std::replace(line.begin(), line.end(), ',', ' ');
+
+    std::stringstream ss(line);
+    double x = 0.0;
+
+    while (ss >> x) {
+      coeffs.push_back(x);
+    }
+  }
+
+  if (coeffs.empty()) {
+    std::cerr
+      << "JunoDetectorResponse: no FC coefficients read from: "
+      << filename
+      << std::endl;
+    return false;
+  }
+
+  SetFCCoefficients(flavor, coeffs);
+
+  std::cerr
+    << "[JUNO FC] loaded "
+    << coeffs.size()
+    << " coefficients for "
+    << FlavorName(flavor)
+    << " from "
+    << filename
+    << std::endl;
+
+  return true;
+}
+
 void JunoDetectorResponse::SetFCCoefficients(
     Flavor flavor,
     const std::vector<double>& coeffs) {
@@ -412,6 +473,46 @@ JunoDetectorResponse::EnergyRecoProbs(double etrue, Flavor flavor) const {
   return probs;
 }
 
+// std::vector<std::pair<int, double> >
+// JunoDetectorResponse::CosthRecoProbs(double costh_true, double etrue) const {
+//   std::vector<std::pair<int, double> > probs;
+
+//   if (!fConfig.apply_costh_smearing) {
+//     const int ibin = FindBin(fCosthEdges, costh_true);
+//     if (ibin > 0) probs.emplace_back(ibin, 1.0);
+//     return probs;
+//   }
+
+//   const double c = std::max(-1.0, std::min(1.0, costh_true));
+//   const double theta = std::acos(c);
+//   const double sigma_theta_rad =
+//       std::max(1.0e-6, SigmaThetaDeg(etrue)) * kPi / 180.0;
+//   const double sigma_c =
+//       std::max(1.0e-6, std::abs(std::sin(theta)) * sigma_theta_rad);
+//   const double mean = c;
+//   double norm = 0.0;
+
+//   const int nbins = static_cast<int>(fCosthEdges.size()) - 1;
+//   for (int ibin = 1; ibin <= nbins; ++ibin) {
+//     const double low = fCosthEdges[ibin - 1];
+//     const double high = fCosthEdges[ibin];
+//     if (high < mean - fConfig.smear_nsigma * sigma_c) continue;
+//     if (low  > mean + fConfig.smear_nsigma * sigma_c) continue;
+
+//     const double p = GaussianBinProb(low, high, mean, sigma_c);
+//     if (p > 0.0) {
+//       probs.emplace_back(ibin, p);
+//       norm += p;
+//     }
+//   }
+
+//   if (fConfig.preserve_normalization && norm > 0.0) {
+//     for (auto& x : probs) x.second /= norm;
+//   }
+
+//   return probs;
+// }
+
 std::vector<std::pair<int, double> >
 JunoDetectorResponse::CosthRecoProbs(double costh_true, double etrue) const {
   std::vector<std::pair<int, double> > probs;
@@ -422,31 +523,134 @@ JunoDetectorResponse::CosthRecoProbs(double costh_true, double etrue) const {
     return probs;
   }
 
-  const double c = std::max(-1.0, std::min(1.0, costh_true));
-  const double theta = std::acos(c);
+  const double c =
+    std::max(-1.0, std::min(1.0, costh_true));
+
+  const double theta =
+    std::acos(c);
+
   const double sigma_theta_rad =
-      std::max(1.0e-6, SigmaThetaDeg(etrue)) * kPi / 180.0;
+    std::max(1.0e-6, SigmaThetaDeg(etrue)) * kPi / 180.0;
+
   const double sigma_c =
-      std::max(1.0e-6, std::abs(std::sin(theta)) * sigma_theta_rad);
+    std::max(1.0e-6, std::abs(std::sin(theta)) * sigma_theta_rad);
+
   const double mean = c;
-  double norm = 0.0;
 
-  const int nbins = static_cast<int>(fCosthEdges.size()) - 1;
-  for (int ibin = 1; ibin <= nbins; ++ibin) {
-    const double low = fCosthEdges[ibin - 1];
-    const double high = fCosthEdges[ibin];
-    if (high < mean - fConfig.smear_nsigma * sigma_c) continue;
-    if (low  > mean + fConfig.smear_nsigma * sigma_c) continue;
+  const int nbins =
+    static_cast<int>(fCosthEdges.size()) - 1;
 
-    const double p = GaussianBinProb(low, high, mean, sigma_c);
-    if (p > 0.0) {
-      probs.emplace_back(ibin, p);
-      norm += p;
-    }
+  if (nbins <= 0) {
+    return probs;
   }
 
+  const double support_low =
+    mean - fConfig.smear_nsigma * sigma_c;
+
+  const double support_high =
+    mean + fConfig.smear_nsigma * sigma_c;
+
+  auto add_prob = [&](int ibin, double p) {
+    if (p <= 0.0) return;
+
+    for (auto& x : probs) {
+      if (x.first == ibin) {
+        x.second += p;
+        return;
+      }
+    }
+
+    probs.emplace_back(ibin, p);
+  };
+
+  auto overlap_prob = [&](double a, double b) {
+    const double lo = std::max(a, support_low);
+    const double hi = std::min(b, support_high);
+
+    if (hi <= lo) {
+      return 0.0;
+    }
+
+    return GaussianBinProb(lo, hi, mean, sigma_c);
+  };
+
+  /*
+    Reflection folding on [-1, 1]:
+
+    For each integer k:
+
+      identity branch:
+        x in [-1 + 4k, 1 + 4k]
+        c_folded = x - 4k
+
+        reco bin [low, high] receives x in:
+        [low + 4k, high + 4k]
+
+      reflected branch:
+        x in [1 + 4k, 3 + 4k]
+        c_folded = 2 + 4k - x
+
+        reco bin [low, high] receives x in:
+        [2 + 4k - high, 2 + 4k - low]
+
+    This automatically handles values beyond -2, +2, etc.
+  */
+
+  const int k_min =
+    static_cast<int>(std::floor((support_low - 3.0) / 4.0)) - 1;
+
+  const int k_max =
+    static_cast<int>(std::ceil((support_high + 3.0) / 4.0)) + 1;
+
+  for (int ibin = 1; ibin <= nbins; ++ibin) {
+    const double low =
+      fCosthEdges[ibin - 1];
+
+    const double high =
+      fCosthEdges[ibin];
+
+    double p_total = 0.0;
+
+    for (int k = k_min; k <= k_max; ++k) {
+      const double shift = 4.0 * k;
+
+      // Identity branch: x -> x - 4k
+      const double id_low =
+        low + shift;
+
+      const double id_high =
+        high + shift;
+
+      p_total += overlap_prob(id_low, id_high);
+
+      // Reflected branch: x -> 2 + 4k - x
+      const double ref_low =
+        2.0 + shift - high;
+
+      const double ref_high =
+        2.0 + shift - low;
+
+      p_total += overlap_prob(ref_low, ref_high);
+    }
+
+    add_prob(ibin, p_total);
+  }
+
+  double norm = 0.0;
+  for (const auto& x : probs) {
+    norm += x.second;
+  }
+
+  /*
+    With mirror reflection, total probability inside [-1, 1]
+    should already be close to the Gaussian probability inside
+    mean ± nsigma*sigma. If preserve_normalization is true,
+    renormalize the truncated support to exactly 1.
+  */
   if (fConfig.preserve_normalization && norm > 0.0) {
-    for (auto& x : probs) x.second /= norm;
+    for (auto& x : probs) {
+      x.second /= norm;
+    }
   }
 
   return probs;
@@ -470,6 +674,170 @@ TH2D* JunoDetectorResponse::EnsureHist(
   h->SetDirectory(nullptr);
   output[key] = h;
   return h;
+}
+
+bool JunoDetectorResponse::ApplyToVALORArrays(
+    std::vector<valor::VALORArray*> & mct_fin_ob,
+    const std::vector<bool> & mct_null_ob,
+    const std::vector<valor::conv::ReacMode_t> & modes,
+    const valor::SingleSampleKineBinning & binning,
+    valor::conv::Sample_t sample,
+    Option_t * opt) const
+{
+  (void)opt;
+
+  if (fConfig.apply_pid) {
+    std::cerr
+      << "JunoDetectorResponse::ApplyToVALORArrays: PID is requested, "
+      << "but PID requires cross-sample migration and cannot be applied "
+      << "inside one JunoSingleSampleFitModel. Disable apply_pid here "
+      << "or handle PID in CompoundFitModel."
+      << std::endl;
+    return false;
+  }
+
+  Flavor flavor = Flavor::kNC;
+
+  if      (sample == valor::conv::ksJUNO_FC_CC_Nue)    flavor = Flavor::kNuE;
+  else if (sample == valor::conv::ksJUNO_FC_CC_Numu)   flavor = Flavor::kNuMu;
+  else if (sample == valor::conv::ksJUNO_FC_CC_Nuebar) flavor = Flavor::kNuEBar;
+  else if (sample == valor::conv::ksJUNO_FC_CC_Numubar)flavor = Flavor::kNuMuBar;
+  else {
+    std::cerr
+      << "JunoDetectorResponse::ApplyToVALORArrays: unsupported sample = "
+      << sample << std::endl;
+    return false;
+  }
+
+  const valor::VALORBinning * reco_ob = binning.RecoOptBinning();
+
+  if (!reco_ob) {
+    std::cerr
+      << "JunoDetectorResponse::ApplyToVALORArrays: null reco binning"
+      << std::endl;
+    return false;
+  }
+
+  const int n_reco_bins = reco_ob->NBins();
+
+  for (size_t imode = 0; imode < modes.size(); ++imode) {
+
+    if (modes[imode] == valor::conv::kmUndefined) {
+      continue;
+    }
+
+    if (imode < mct_null_ob.size() && mct_null_ob[imode]) {
+      continue;
+    }
+
+    if (imode >= mct_fin_ob.size()) {
+      continue;
+    }
+
+    valor::VALORArray * arr = mct_fin_ob[imode];
+
+    if (!arr) {
+      continue;
+    }
+
+    const valor::VALORBinning * true_sb =
+      binning.TrueSmpBinning(modes[imode]);
+
+    if (!true_sb) {
+      continue;
+    }
+
+    const int n_true_bins = true_sb->NBins();
+
+    valor::VALORArray out(n_reco_bins, n_true_bins);
+    out.SetAll(0.0);
+
+    for (int itrue = 0; itrue < n_true_bins; ++itrue) {
+
+      const double etrue =
+        true_sb->BinCentre(itrue, valor::conv::kvEtrue);
+
+      const double costh_true =
+        true_sb->BinCentre(itrue, valor::conv::kvQ2true);
+
+      double true_rate = 0.0;
+
+      for (int ireco = 0; ireco < n_reco_bins; ++ireco) {
+        true_rate += arr->GetEntry(ireco, itrue);
+      }
+
+      if (true_rate <= 0.0) {
+        continue;
+      }
+
+      if (fConfig.apply_fc) {
+        true_rate *= EvalFC(flavor, etrue);
+      }
+
+      if (true_rate <= 0.0) {
+        continue;
+      }
+
+      const std::vector<std::pair<int, double> > e_probs =
+        EnergyRecoProbs(etrue, flavor);
+
+      const std::vector<std::pair<int, double> > c_probs =
+        CosthRecoProbs(costh_true, etrue);
+
+      if (e_probs.empty() || c_probs.empty()) {
+        continue;
+      }
+
+      for (const auto & ep : e_probs) {
+        const int ie_reco = ep.first;
+        const double pE = ep.second;
+
+        if (ie_reco <= 0 || pE <= 0.0) {
+          continue;
+        }
+
+        for (const auto & cp : c_probs) {
+          const int ic_reco = cp.first;
+          const double pC = cp.second;
+
+          if (ic_reco <= 0 || pC <= 0.0) {
+            continue;
+          }
+
+          const double ereco =
+            0.5 * (fEnergyEdges[ie_reco - 1] + fEnergyEdges[ie_reco]);
+
+          const double creco =
+            0.5 * (fCosthEdges[ic_reco - 1] + fCosthEdges[ic_reco]);
+
+          std::vector<double> reco_vars;
+          reco_vars.push_back(ereco);
+          reco_vars.push_back(creco);
+
+          const int ireco_ob = reco_ob->FindBin(reco_vars);
+
+          if (ireco_ob < 0) {
+            continue;
+          }
+
+          const double old = out.GetEntry(ireco_ob, itrue);
+
+          out.SetEntry(
+              old + true_rate * pE * pC,
+              ireco_ob,
+              itrue);
+        }
+      }
+    }
+
+    for (int itrue = 0; itrue < n_true_bins; ++itrue) {
+      for (int ireco = 0; ireco < n_reco_bins; ++ireco) {
+        arr->SetEntry(out.GetEntry(ireco, itrue), ireco, itrue);
+      }
+    }
+  }
+
+  return true;
 }
 
 } // namespace juno

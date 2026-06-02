@@ -56,6 +56,7 @@ public:
                           const std::vector<double>& costh_edges);
 
   bool LoadFCCoefficientsText(const std::string& filename);
+  bool LoadFCCoefficientsText(const std::string& filename, Flavor flavor);
   void SetFCCoefficients(Flavor flavor, const std::vector<double>& coeffs);
 
   bool LoadPIDMatrixCSV(const std::string& filename);

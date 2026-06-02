@@ -21,6 +21,8 @@ protected:
   bool ApplyExperimentSpecificResponse(
       Option_t* opt) override;
 
+  bool UseDummyRecoForPreResponse() const override;
+
 private:
   bool fUseJunoDetectorResponse;
   juno::JunoDetectorResponse fJunoDetectorResponse;
