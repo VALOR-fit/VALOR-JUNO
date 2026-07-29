@@ -448,8 +448,13 @@ JunoDetectorResponse::EnergyRecoProbs(double etrue, Flavor flavor) const {
     return probs;
   }
 
-  const double sigma = std::max(1.0e-6, SigmaEnergy(etrue, flavor));
-  const double mean = etrue + MuEnergyBias(etrue, flavor);
+  const double sigma =
+    std::max(1.0e-6,
+             EnergyResolutionScale(flavor) * SigmaEnergy(etrue, flavor));
+
+  const double mean =
+      etrue + EnergyBiasScale(flavor) * MuEnergyBias(etrue, flavor);
+
   double norm = 0.0;
 
   const int nbins = static_cast<int>(fEnergyEdges.size()) - 1;
@@ -530,7 +535,9 @@ JunoDetectorResponse::CosthRecoProbs(double costh_true, double etrue) const {
     std::acos(c);
 
   const double sigma_theta_rad =
-    std::max(1.0e-6, SigmaThetaDeg(etrue)) * kPi / 180.0;
+    std::max(1.0e-6,
+             fConfig.angle_resolution_scale * SigmaThetaDeg(etrue))
+    * kPi / 180.0;
 
   const double sigma_c =
     std::max(1.0e-6, std::abs(std::sin(theta)) * sigma_theta_rad);
@@ -838,6 +845,20 @@ bool JunoDetectorResponse::ApplyToVALORArrays(
   }
 
   return true;
+}
+
+double JunoDetectorResponse::EnergyResolutionScale(Flavor flavor) const
+{
+  return IsEFlavor(flavor)
+    ? fConfig.energy_resolution_scale_e
+    : fConfig.energy_resolution_scale_mu;
+}
+
+double JunoDetectorResponse::EnergyBiasScale(Flavor flavor) const
+{
+  return IsEFlavor(flavor)
+    ? fConfig.energy_bias_scale_e
+    : fConfig.energy_bias_scale_mu;
 }
 
 } // namespace juno

@@ -27,7 +27,7 @@
   <detector_response>
 
     <enabled>
-      false
+      true
     </enabled>
 
     <!-- FC ratio -->
@@ -36,7 +36,7 @@
     </apply_fc>
 
     <fc_coeff_dir>
-      data/input/fc_ratio/Total_FC_V2
+      data/input/fc_ratio/Total_FC_V2/coeffs_antinumu.txt
     </fc_coeff_dir>
 
     <!-- Energy smearing -->
@@ -46,7 +46,7 @@
 
     <!-- cos(theta) smearing -->
     <apply_costh_smearing>
-      true
+      false
     </apply_costh_smearing>
 
     <!-- PID confusion -->
@@ -67,6 +67,15 @@
     <preserve_normalization>
       false
     </preserve_normalization>
+
+    <!-- Smearing Method Floats -->
+    <energy_resolution_scale_e>1.0</energy_resolution_scale_e>
+    <energy_resolution_scale_mu>1.0</energy_resolution_scale_mu>
+
+    <energy_bias_scale_e>1.0</energy_bias_scale_e>
+    <energy_bias_scale_mu>1.0</energy_bias_scale_mu>
+
+    <angle_resolution_scale>1.0</angle_resolution_scale>
 
   </detector_response>
 

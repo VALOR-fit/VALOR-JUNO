@@ -34,6 +34,16 @@ public:
     bool apply_pid = false;
     bool preserve_normalization = false;
     double smear_nsigma = 5.0;
+
+    // Detector-response nuisance scales.
+    // Nominal = 1.0.
+    double energy_resolution_scale_e  = 1.0;
+    double energy_resolution_scale_mu = 1.0;
+
+    double energy_bias_scale_e  = 1.0;
+    double energy_bias_scale_mu = 1.0;
+
+    double angle_resolution_scale = 1.0;
   };
 
   struct Component {
@@ -77,6 +87,10 @@ public:
     const valor::SingleSampleKineBinning& binning,
     valor::conv::Sample_t sample,
     Option_t* opt = 0) const;
+
+  // smearing floating helper declaration
+  double EnergyResolutionScale(Flavor flavor) const;
+  double EnergyBiasScale(Flavor flavor) const;
 
 private:
   Config fConfig;

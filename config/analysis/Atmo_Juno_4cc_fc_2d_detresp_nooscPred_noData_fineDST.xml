@@ -10,7 +10,7 @@
       <mc>           mc/AtmoJuno_detresp_numuCC_fc_model_NOOSC_fineDST.xml   </mc>
       <data>         mc/AtmoJuno_detresp_numuCC_fc_data_NO_fineDST.xml    </data>
       <data_class>   valor::GenericSingleSampleFitData                      </data_class>
-      <model_class>  valor::GenericSingleSampleFitModel                     </model_class>
+      <model_class>  valor::JunoSingleSampleFitModel                     </model_class>
       <binning>      binning/juno_proposal_binning_2D.xml                   </binning>
     </element>
 
@@ -22,7 +22,7 @@
       <mc>           mc/AtmoJuno_detresp_numubarCC_fc_model_NOOSC_fineDST.xml </mc>
       <data>         mc/AtmoJuno_detresp_numubarCC_fc_data_NO_fineDST.xml  </data>
       <data_class>   valor::GenericSingleSampleFitData                        </data_class>
-      <model_class>  valor::GenericSingleSampleFitModel                       </model_class>
+      <model_class>  valor::JunoSingleSampleFitModel                       </model_class>
       <binning>      binning/juno_proposal_binning_2D.xml                     </binning>
     </element>
 
@@ -34,7 +34,7 @@
       <mc>           mc/AtmoJuno_detresp_nueCC_fc_model_NOOSC_fineDST.xml   </mc>
       <data>         mc/AtmoJuno_detresp_nueCC_fc_data_NO_fineDST.xml    </data>
       <data_class>   valor::GenericSingleSampleFitData                     </data_class>
-      <model_class>  valor::GenericSingleSampleFitModel                    </model_class>
+      <model_class>  valor::JunoSingleSampleFitModel                    </model_class>
       <binning>      binning/juno_proposal_binning_2D.xml                  </binning>
     </element>
 
@@ -46,7 +46,7 @@
       <mc>           mc/AtmoJuno_detresp_nuebarCC_fc_model_NOOSC_fineDST.xml </mc>
       <data>         mc/AtmoJuno_detresp_nuebarCC_fc_data_NO_fineDST.xml  </data>
       <data_class>   valor::GenericSingleSampleFitData                       </data_class>
-      <model_class>  valor::GenericSingleSampleFitModel                      </model_class>
+      <model_class>  valor::JunoSingleSampleFitModel                      </model_class>
       <binning>      binning/juno_proposal_binning_2D.xml                    </binning>
     </element>
   </element_list>

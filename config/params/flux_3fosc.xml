@@ -40,9 +40,9 @@
     <type> special </type>
     <limits> 0.0, 1.0 </limits>
     <range_mode> value </range_mode>
-    <range> 2.315e-3, 2.595e-3 </range>
+    <range> 2.0e-3, 3.0e-3 </range>
     <step_mode> value </step_mode>
-    <step> 1e-6 </step>
+    <step> 2e-6 </step>
     <init> 2.4e-3 </init>
   </param>
 
@@ -55,7 +55,7 @@
     <range_mode> value </range_mode>
     <range> 0.247, 0.372 </range>
     <step_mode> value </step_mode>
-    <step> 0.001 </step>
+    <step> 0.002 </step>
     <init> 0.29 </init>
   </param>
 
@@ -68,7 +68,7 @@
     <range_mode> value </range_mode>
     <range> 0.0184, 0.0254 </range>
     <step_mode> value </step_mode>
-    <step> 0.0001 </step>
+    <step> 0.0002 </step>
     <init> 0.02 </init>
   </param>
 
@@ -79,7 +79,7 @@
     <type> special </type>
     <limits> 0.0, 1.0 </limits>
     <range_mode> value </range_mode>
-    <range> 0.453, 0.633 </range>
+    <range> 0.3, 0.7 </range>
     <step_mode> value </step_mode>
     <step> 0.002 </step>
     <init> 0.5 </init>
@@ -94,8 +94,124 @@
     <range_mode> value </range_mode>
     <range> 0.0, 6.29 </range>
     <step_mode> value </step_mode>
-    <step> 0.01 </step>
+    <step> 0.02 </step>
     <init> 1.853 </init>
+  </param>
+
+  <param>
+    <name>
+      <simple> juno_eres_e </simple>
+    </name>
+
+    <type> normalisation </type>
+    <nuisance> true </nuisance>
+    <fixed> true </fixed>
+
+    <categories>
+      <category> detector </category>
+      <category> det </category>
+      <category> JUNO </category>
+      <category> FD </category>
+    </categories>
+
+    <limits> -1.0, 1.0 </limits>
+    <range_mode> value </range_mode>
+    <range> -1.0, 1.0 </range>
+    <step_mode> value </step_mode>
+    <step> 0.1 </step>
+    <init> 0.0 </init>
+  </param>
+
+  <param>
+    <name>
+      <simple> juno_eres_mu </simple>
+    </name>
+    <type> normalisation </type>
+    <nuisance> true </nuisance>
+    <fixed> true </fixed>
+
+    <categories>
+      <category> det </category>
+      <category> detector </category>
+      <category> JUNO </category>
+      <category> FD </category>
+    </categories>
+
+    <limits> -1.0, 1.0 </limits>
+    <range_mode> value </range_mode>
+    <range> -1.0, 1.0 </range>
+    <step_mode> value </step_mode>
+    <step> 0.1 </step>
+    <init> 0.0 </init>
+  </param>
+
+  <param>
+    <name>
+      <simple> juno_ebias_e </simple>
+    </name>
+    <type> normalisation </type>
+    <nuisance> true </nuisance>
+    <fixed> true </fixed>
+
+    <categories>
+      <category> det </category>
+      <category> detector </category>
+      <category> JUNO </category>
+      <category> FD </category>
+    </categories>
+
+    <limits> -1.0, 1.0 </limits>
+    <range_mode> value </range_mode>
+    <range> -1.0, 1.0 </range>
+    <step_mode> value </step_mode>
+    <step> 0.1 </step>
+    <init> 0.0 </init>
+  </param>
+
+  <param>
+    <name>
+      <simple> juno_ebias_mu </simple>
+    </name>
+    <type> normalisation </type>
+    <nuisance> true </nuisance>
+    <fixed> true </fixed>
+
+    <categories>
+      <category> det </category>
+      <category> detector </category>
+      <category> JUNO </category>
+      <category> FD </category>
+    </categories>
+
+    <limits> -1.0, 1.0 </limits>
+    <range_mode> value </range_mode>
+    <range> -1.0, 1.0 </range>
+    <step_mode> value </step_mode>
+    <step> 0.1 </step>
+    <init> 0.0 </init>
+  </param>
+
+  <param>
+    <name>
+      <simple> juno_ares </simple>
+    </name>
+    <type> normalisation </type>
+    <nuisance> true </nuisance>
+    <fixed> true </fixed>
+
+    <categories>
+      <category> det </category>
+      <category> detector </category>
+      <category> JUNO </category>
+      <category> FD </category>
+    </categories>
+
+    <limits> -1.0, 1.0 </limits>
+    <range_mode> value </range_mode>
+    <range> -1.0, 1.0 </range>
+    <step_mode> value </step_mode>
+    <step> 0.1 </step>
+    <init> 0.0 </init>
   </param>
 
 </param_list>

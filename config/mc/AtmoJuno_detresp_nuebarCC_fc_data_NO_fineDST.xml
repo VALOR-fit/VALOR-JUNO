@@ -6,7 +6,7 @@
     <using_hist_format> false </using_hist_format>
     <dst>
       <juno>
-        <filename> valor_juno_grid_dst_IO.root </filename>
+        <filename> valor_juno_grid_dst_IO_energy_smear.root </filename>
         <objname>  valor_dst </objname>
         <objtype>  TTree </objtype>
       </juno>

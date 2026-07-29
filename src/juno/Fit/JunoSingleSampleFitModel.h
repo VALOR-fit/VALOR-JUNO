@@ -12,6 +12,7 @@ class JunoSingleSampleFitModel : public GenericSingleSampleFitModel {
 public:
   JunoSingleSampleFitModel();
   virtual ~JunoSingleSampleFitModel();
+  bool Generate(const FitParamList& fp, Option_t* opt = 0) override;
 
 protected:
   bool ReadExperimentSpecificConfig(
@@ -23,9 +24,12 @@ protected:
 
   bool UseDummyRecoForPreResponse() const override;
 
+  void UpdateJunoDetectorResponseConfig(const FitParamList& fp);
+
 private:
   bool fUseJunoDetectorResponse;
   juno::JunoDetectorResponse fJunoDetectorResponse;
+  juno::JunoDetectorResponse::Config fJunoDetectorResponseConfig;
   
 };
 

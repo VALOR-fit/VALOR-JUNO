@@ -7,22 +7,22 @@ if [[ -z "${VALOR_EXPT:-}" ]]; then
 fi
 
 TAG="${TAG:-nooscPred_earthosc_NO_on_no_data_fineDST_detresp}"
-RUN="${RUN:-20260522_test}"
+RUN="${RUN:-20260713_test}"
 
 CFG="${CFG:-${VALOR_EXPT}/config/analysis/Atmo_Juno_4cc_fc_2d_detresp_nooscPred_noData_fineDST.xml}"
 
 FC_COEFF_DIR="${FC_COEFF_DIR:-${VALOR_EXPT}/data/input/fc_ratio/Total_FC_V2}"
 PID_MATRIX_FILE="${PID_MATRIX_FILE:-${VALOR_EXPT}/data/input/detector_response/pid_matrices_8bin_from_user.csv}"
 
-LOG="/scratchfs/juno/heziou/VALOR/softw/JUNO/vmaster/logs/${TAG}_${RUN}.log"
+LOG="/scratchfs2/juno/heziou/VALOR/softw/JUNO/vmaster/logs/${TAG}_${RUN}.log"
 
 INPUT_MIXING12="${INPUT_MIXING12:-0.307}"
 INPUT_MIXING13="${INPUT_MIXING13:-0.0219}"
-INPUT_MIXING23="${INPUT_MIXING23:-0.558}"
+INPUT_MIXING23="${INPUT_MIXING23:-0.65}"
 INPUT_DM12SQ="${INPUT_DM12SQ:-7.53e-5}"
-INPUT_DM23SQ="${INPUT_DM23SQ:-2.455e-3}"
+INPUT_DM23SQ="${INPUT_DM23SQ:-2.8e-3}"
 
-CPV_PI_FACTOR="${CPV_PI_FACTOR:-1.19}"
+CPV_PI_FACTOR="${CPV_PI_FACTOR:-1.9}"
 INPUT_CPV="${INPUT_CPV:-$(awk -v a="${CPV_PI_FACTOR}" 'BEGIN { printf "%.15f", a * atan2(0,-1) }')}"
 
 if [[ ! -f "${CFG}" ]]; then
@@ -67,7 +67,7 @@ valor-run_fit \
   --tag "${TAG}" \
   --run "${RUN}" \
   --ntoymc 1 \
-  --fit-param-opt NONE \
+  --fit-param-opt nuosc3f \
   --without-stat-fluct \
   --syst-prior-file - \
   --read-data \
@@ -80,10 +80,7 @@ valor-run_fit \
   --input-cpv "${INPUT_CPV}" \
   --fix-mixing12 --fix-at-mixing12 "${INPUT_MIXING12}" \
   --fix-dm12sq --fix-at-dm12sq "${INPUT_DM12SQ}" \
-  --fix-cpv --fix-at-cpv "${INPUT_CPV}" \
   --fix-mixing13 --fix-at-mixing13 "${INPUT_MIXING13}" \
-  --fix-mixing23 --fix-at-mixing23 "${INPUT_MIXING23}" \
-  --fix-dm23sq --fix-at-dm23sq "${INPUT_DM23SQ}" \
   2>&1 | tee "${LOG}"
 
 FIT_RC=${PIPESTATUS[0]}
@@ -101,5 +98,8 @@ fi
 
 echo "[INFO] Extracting key lines"
 grep -nE "DetectorResponse|JunoDetectorResponse|Data file given so will Read|Fit starts with statistic|Fit ends with statistic|Best-fit statistic" "${LOG}" | tail -n 50 || true
+grep -nE "Fit parameter list size|Number of free parameters|juno_eres|juno_ebias|juno_ares|nuisance" "$LOG" | tail -n 160
 
 echo "[DONE] Completed NOOSC+Earth-osc+detector-response NO chi2 check"
+
+  # --fit-param-opt NONE \ line 70

@@ -318,6 +318,93 @@ void build_grid_dst_compact_from_maps() {
     return 0.5 * (std::erf(z2) - std::erf(z1));
   };
 
+  auto mirrorCosthRecoProbs = [&](double C_true, double E_true) {
+  std::vector<std::pair<int,double>> probs;
+  probs.reserve(nC_ana);
+
+  const double cClamped = std::max(-1.0, std::min(1.0, C_true));
+  const double theta = std::acos(cClamped);
+
+  const double sigmaThetaRad =
+    std::max(1.0e-6, sigmaThetaDeg(E_true)) * M_PI / 180.0;
+
+  const double cSigma =
+    std::max(1.0e-6, std::abs(std::sin(theta)) * sigmaThetaRad);
+
+  const double cMean = cClamped;
+
+  const double supportLow  = cMean - smearNSigma * cSigma;
+  const double supportHigh = cMean + smearNSigma * cSigma;
+
+  auto overlapProb = [&](double a, double b) {
+    const double lo = std::max(a, supportLow);
+    const double hi = std::min(b, supportHigh);
+
+    if (hi <= lo) {
+      return 0.0;
+    }
+
+    return gaussianBinProb(lo, hi, cMean, cSigma);
+  };
+
+  /*
+    Mirror reflection on [-1, 1].
+
+    Reco bin [low, high] receives probability from two families
+    of pre-image intervals:
+
+      identity branch:
+        [low + 4k, high + 4k]
+
+      reflected branch:
+        [2 + 4k - high, 2 + 4k - low]
+
+    This automatically handles tails beyond -2, +2, etc.
+  */
+
+  const int kMin =
+    static_cast<int>(std::floor((supportLow - 3.0) / 4.0)) - 1;
+
+  const int kMax =
+    static_cast<int>(std::ceil((supportHigh + 3.0) / 4.0)) + 1;
+
+  double cNorm = 0.0;
+
+  for (int icReco = 1; icReco <= nC_ana; ++icReco) {
+    const double low  = c_edges_ana[icReco - 1];
+    const double high = c_edges_ana[icReco];
+
+    double pTotal = 0.0;
+
+    for (int k = kMin; k <= kMax; ++k) {
+      const double shift = 4.0 * k;
+
+      // Direct image
+      const double idLow  = low  + shift;
+      const double idHigh = high + shift;
+      pTotal += overlapProb(idLow, idHigh);
+
+      // Reflected image
+      const double refLow  = 2.0 + shift - high;
+      const double refHigh = 2.0 + shift - low;
+      pTotal += overlapProb(refLow, refHigh);
+    }
+
+    if (pTotal > 0.0) {
+      probs.emplace_back(icReco, pTotal);
+      cNorm += pTotal;
+    }
+  }
+
+  if (preserveNormalization && cNorm > 0.0) {
+    for (auto& x : probs) {
+      x.second /= cNorm;
+    }
+  }
+
+  return probs;
+  };
+
   TFile fNumu(fluxNumuFile.c_str(), "READ");
   TFile fNue(fluxNueFile.c_str(), "READ");
   TFile fNumubar(fluxNumubarFile.c_str(), "READ");
@@ -597,29 +684,8 @@ void build_grid_dst_compact_from_maps() {
             if (C_true == c_edges_ana[nC_ana]) icReco = nC_ana;
             if (icReco > 0) cProbs.emplace_back(icReco, 1.0);
           } else {
-            const double cClamped = std::max(-1.0, std::min(1.0, C_true));
-            const double theta = std::acos(cClamped);
-            const double sigmaThetaRad = std::max(1.0e-6, sigmaThetaDeg(E_true)) * M_PI / 180.0;
-            const double cSigma = std::max(1.0e-6, std::abs(std::sin(theta)) * sigmaThetaRad);
-            const double cMean  = cClamped;
-
-            double cNorm = 0.0;
-            for (int icReco = 1; icReco <= nC_ana; ++icReco) {
-              const double low = c_edges_ana[icReco-1];
-              const double high = c_edges_ana[icReco];
-              if (high < cMean - smearNSigma * cSigma) continue;
-              if (low  > cMean + smearNSigma * cSigma) continue;
-
-              const double p = gaussianBinProb(low, high, cMean, cSigma);
-              if (p > 0.0) {
-                cProbs.emplace_back(icReco, p);
-                cNorm += p;
-              }
+            cProbs = mirrorCosthRecoProbs(C_true, E_true);
             }
-            if (preserveNormalization && cNorm > 0.0) {
-              for (auto& x : cProbs) x.second /= cNorm;
-            }
-          }
         }
 
         if (eProbs.empty() || cProbs.empty()) continue;
